@@ -6,11 +6,18 @@ from collections.abc import Callable
 
 from ifinjected.inventory.base import Collected, Context
 from ifinjected.inventory.cloud import collect_cloud
+from ifinjected.inventory.containers import collect_containers
 from ifinjected.inventory.ssh import collect_ssh_keys
+from ifinjected.inventory.vcs import collect_vcs
 
 Collector = Callable[[Context], Collected]
 
-COLLECTORS: tuple[Collector, ...] = (collect_ssh_keys, collect_cloud)
+COLLECTORS: tuple[Collector, ...] = (
+    collect_ssh_keys,
+    collect_cloud,
+    collect_vcs,
+    collect_containers,
+)
 """Every collector, in report order."""
 
 

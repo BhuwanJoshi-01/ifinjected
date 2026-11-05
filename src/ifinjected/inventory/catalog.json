@@ -32,6 +32,42 @@
     "azure-cli": {
       "title": "Azure CLI: sign in, token caching and AZURE_CONFIG_DIR",
       "url": "https://learn.microsoft.com/en-us/cli/azure/azure-cli-configuration"
+    },
+    "gh-auth": {
+      "title": "GitHub CLI: gh auth login, credential storage in the system keyring or hosts.yml",
+      "url": "https://cli.github.com/manual/gh_auth_login"
+    },
+    "gh-env": {
+      "title": "GitHub CLI: environment variables (GH_CONFIG_DIR)",
+      "url": "https://cli.github.com/manual/gh_help_environment"
+    },
+    "git-credential-store": {
+      "title": "git-credential-store: credentials stored in plain text",
+      "url": "https://git-scm.com/docs/git-credential-store"
+    },
+    "curl-netrc": {
+      "title": "curl: .netrc, the file and the NETRC variable",
+      "url": "https://everything.curl.dev/usingcurl/netrc.html"
+    },
+    "npmrc": {
+      "title": "npm: .npmrc files and auth-related configuration",
+      "url": "https://docs.npmjs.com/cli/v11/configuring-npm/npmrc"
+    },
+    "pypirc": {
+      "title": "PyPA: the .pypirc file",
+      "url": "https://packaging.python.org/en/latest/specifications/pypirc/"
+    },
+    "cargo-credentials": {
+      "title": "Cargo: credentials (CARGO_HOME/credentials.toml)",
+      "url": "https://doc.rust-lang.org/cargo/reference/config.html#credentials"
+    },
+    "docker-config": {
+      "title": "Docker CLI: config.json, credential stores and helpers",
+      "url": "https://docs.docker.com/reference/cli/docker/login/#credential-stores"
+    },
+    "kubeconfig": {
+      "title": "Kubernetes: organizing cluster access using kubeconfig files",
+      "url": "https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/"
     }
   },
   "items": [
@@ -190,6 +226,162 @@
       ],
       "sources": [
         "azure-cli"
+      ]
+    },
+    {
+      "id": "gh.hosts",
+      "title": "GitHub CLI login",
+      "why": "A GitHub token with the scopes you granted gh: push, create repositories, read private code. In the keyring, `gh auth token` still prints it to anyone running as you.",
+      "level": "stat",
+      "deep_level": "full",
+      "paths": [
+        {
+          "base": "gh",
+          "glob": "hosts.yml"
+        }
+      ],
+      "sources": [
+        "gh-auth",
+        "gh-env"
+      ]
+    },
+    {
+      "id": "git.credentials",
+      "title": "Git credential store",
+      "why": "Plain-text passwords and tokens for every Git host listed in it.",
+      "level": "stat",
+      "deep_level": "full",
+      "paths": [
+        {
+          "base": "home",
+          "glob": ".git-credentials"
+        },
+        {
+          "base": "xdg_config",
+          "glob": "git/credentials"
+        }
+      ],
+      "sources": [
+        "git-credential-store"
+      ]
+    },
+    {
+      "id": "netrc",
+      "title": "netrc passwords",
+      "why": "Plain-text logins that curl, git and package managers use without asking.",
+      "level": "stat",
+      "deep_level": "full",
+      "paths": [
+        {
+          "base": "home",
+          "glob": ".netrc"
+        },
+        {
+          "base": "home",
+          "glob": "_netrc"
+        },
+        {
+          "base": "env:NETRC",
+          "glob": "."
+        }
+      ],
+      "sources": [
+        "curl-netrc"
+      ]
+    },
+    {
+      "id": "npm.token",
+      "title": "npm token",
+      "why": "Publishes packages under your name: a supply-chain attack waiting for one command.",
+      "level": "stat",
+      "deep_level": "full",
+      "paths": [
+        {
+          "base": "home",
+          "glob": ".npmrc"
+        },
+        {
+          "base": "env:NPM_CONFIG_USERCONFIG",
+          "glob": "."
+        },
+        {
+          "base": "workspace",
+          "glob": ".npmrc"
+        }
+      ],
+      "sources": [
+        "npmrc"
+      ]
+    },
+    {
+      "id": "pypi.token",
+      "title": "PyPI token",
+      "why": "Publishes packages under your name.",
+      "level": "stat",
+      "deep_level": "full",
+      "paths": [
+        {
+          "base": "home",
+          "glob": ".pypirc"
+        }
+      ],
+      "sources": [
+        "pypirc"
+      ]
+    },
+    {
+      "id": "cargo.token",
+      "title": "Cargo registry token",
+      "why": "Publishes crates under your name.",
+      "level": "stat",
+      "paths": [
+        {
+          "base": "cargo",
+          "glob": "credentials.toml"
+        },
+        {
+          "base": "cargo",
+          "glob": "credentials"
+        }
+      ],
+      "sources": [
+        "cargo-credentials"
+      ]
+    },
+    {
+      "id": "docker.config",
+      "title": "Docker registry logins",
+      "why": "Without a credential store, registry passwords sit in config.json, base64-encoded: push images as you.",
+      "level": "stat",
+      "deep_level": "full",
+      "paths": [
+        {
+          "base": "docker",
+          "glob": "config.json"
+        }
+      ],
+      "sources": [
+        "docker-config"
+      ]
+    },
+    {
+      "id": "kube.config",
+      "title": "Kubernetes config",
+      "why": "Cluster access with your rights, often cluster-admin on development clusters.",
+      "level": "stat",
+      "deep_level": "full",
+      "paths": [
+        {
+          "base": "home",
+          "glob": ".kube/config"
+        },
+        {
+          "base": "kubeconfig",
+          "glob": "."
+        }
+      ],
+      "sources": [
+        "kubeconfig"
       ]
     }
   ]
