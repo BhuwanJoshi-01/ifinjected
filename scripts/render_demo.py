@@ -12,6 +12,8 @@ import dataclasses
 import io
 import sys
 import tempfile
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 from rich.console import Console
@@ -22,14 +24,16 @@ sys.path.insert(0, str(ROOT / "examples" / "messy-laptop"))
 from build import build  # noqa: E402
 
 from ifinjected.homes import Platform, System  # noqa: E402
-from ifinjected.models import Policy  # noqa: E402
+from ifinjected.models import Policy, Snapshot  # noqa: E402
 from ifinjected.orchestrator import diagnose, inspect_all  # noqa: E402
 from ifinjected.privacy import RedactionContext, redacted_with_counts  # noqa: E402
 from ifinjected.reports.card import render_card  # noqa: E402
 from ifinjected.reports.scan import render_scan  # noqa: E402
 
 
-def main() -> None:
+@contextmanager
+def demo_snapshot() -> Iterator[Snapshot]:
+    """The messy-laptop scan with a fixed date, version and environment, redacted."""
     with tempfile.TemporaryDirectory() as directory:
         root = Path(directory)
         home = build(root)
@@ -44,7 +48,11 @@ def main() -> None:
         redacted, counts = redacted_with_counts(
             snapshot, RedactionContext(str(home), "dev", "laptop")
         )
-        redacted = dataclasses.replace(redacted, redactions=counts)
+        yield dataclasses.replace(redacted, redactions=counts)
+
+
+def main() -> None:
+    with demo_snapshot() as redacted:
         console = Console(
             record=True,
             width=100,

@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ifinjected: what could a prompt-injected coding agent reach on your machine?</title>
+<meta name="description" content="One command reads how Claude Code, Codex, Gemini CLI, Cursor, opencode and Copilot CLI are set up, finds the credentials on your machine without reading their values, and grades what an injected agent could read and send out. Open source, read-only, offline.">
+<link rel="canonical" href="https://bhuwanjoshi-01.github.io/ifinjected/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="ifinjected">
+<meta property="og:description" content="What could a prompt-injected coding agent reach on your machine? A grade per agent, with the line of configuration behind it. Read-only and offline.">
+<meta property="og:url" content="https://bhuwanjoshi-01.github.io/ifinjected/">
+<meta property="og:image" content="https://bhuwanjoshi-01.github.io/ifinjected/assets/social-card.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta property="og:image:alt" content="A printout of a laptop's credential files, highlighted where Claude Code, Codex and opencode could read them without approval, with grades F, C and F.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#e6ebf0">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/newsreader.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+<script src="main.js" defer></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-row">
+    <a class="brand" href="#top">ifinjected</a>
+    <nav aria-label="Page">
+      <a href="#finds">What it finds</a>
+      <a href="#grade">Grades</a>
+      <a href="#prove">Prove</a>
+      <a href="#ci">In CI</a>
+      <a href="https://github.com/BhuwanJoshi-01/ifinjected">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero wrap" aria-labelledby="title">
+    <h1 id="title">If a coding agent on your machine got prompt&#8209;injected right now, what could it reach?</h1>
+    <div class="hero-side">
+      <p class="lede">ifinjected reads how Claude Code, Codex, Gemini CLI, Cursor, opencode and Copilot CLI are set
+        up, finds the credentials on your machine without reading their values, and shows, agent by agent, what an
+        injected agent could read and where it could send it.</p>
+      <div class="command">
+        <code id="install-command">uvx ifinjected</code>
+        <button class="copy" type="button" data-copy="install-command">Copy</button>
+      </div>
+      <p class="fine">Read-only and offline. Needs Python 3.11 or newer; <code>uv tool install ifinjected</code> or
+        <code>pipx install ifinjected</code> keeps it.</p>
+    </div>
+  </section>
+
+  <figure class="paper wrap" aria-labelledby="listing-caption">
+    <figcaption id="listing-caption">The example laptop in
+      <a href="https://github.com/BhuwanJoshi-01/ifinjected/tree/main/examples/messy-laptop">examples/messy-laptop</a>,
+      as <code>ifinjected scan</code> sees it.</figcaption>
+    <div class="listing">
+<!-- listing:start -->
+<table class="listing-table">
+<thead><tr>
+<th scope="col">On this laptop</th>
+<th scope="col">Claude Code<small>default settings, no sandbox</small></th>
+<th scope="col">Codex<small>read-only + on-request, sandbox on</small></th>
+<th scope="col">opencode<small>default settings, no sandbox</small></th>
+</tr></thead>
+<tbody>
+<tr><th scope="row"><code>~/.ssh/id_ed25519</code><small>SSH private key (no passphrase)</small></th>
+<td data-agent="Claude Code"><mark class="hl hl-none" style="--i:0">around a deny rule</mark><small>the deny rule for ~/.ssh/** does not cover shell commands</small></td>
+<td data-agent="Codex"><mark class="hl hl-none" style="--i:0">no approval</mark></td>
+<td data-agent="opencode"><mark class="hl hl-none" style="--i:0">no approval</mark></td>
+</tr>
+<tr><th scope="row"><code>~/.aws/credentials</code><small>AWS credentials file</small></th>
+<td data-agent="Claude Code"><mark class="hl hl-none" style="--i:1">no approval</mark></td>
+<td data-agent="Codex"><mark class="hl hl-none" style="--i:1">no approval</mark></td>
+<td data-agent="opencode"><mark class="hl hl-none" style="--i:1">no approval</mark></td>
+</tr>
+<tr><th scope="row"><code>~/.config/gh/hosts.yml</code><small>GitHub CLI login</small></th>
+<td data-agent="Claude Code"><mark class="hl hl-none" style="--i:2">no approval</mark></td>
+<td data-agent="Codex"><mark class="hl hl-none" style="--i:2">no approval</mark></td>
+<td data-agent="opencode"><mark class="hl hl-none" style="--i:2">no approval</mark></td>
+</tr>
+<tr><th scope="row"><code>~/.npmrc</code><small>npm config (may hold a token)</small></th>
+<td data-agent="Claude Code"><mark class="hl hl-none" style="--i:3">no approval</mark></td>
+<td data-agent="Codex"><mark class="hl hl-none" style="--i:3">no approval</mark></td>
+<td data-agent="opencode"><mark class="hl hl-none" style="--i:3">no approval</mark></td>
+</tr>
+<tr><th scope="row"><code>~/src/app/.env</code><small>.env file in the workspace</small></th>
+<td data-agent="Claude Code"><mark class="hl hl-none" style="--i:4">no approval</mark></td>
+<td data-agent="Codex"><mark class="hl hl-none" style="--i:4">no approval</mark></td>
+<td data-agent="opencode"><mark class="hl hl-none" style="--i:4">no approval</mark></td>
+</tr>
+<tr><th scope="row">the shell&#x27;s environment<small>Service credentials in the environment</small></th>
+<td data-agent="Claude Code"><mark class="hl hl-none" style="--i:5">no approval</mark></td>
+<td data-agent="Codex"><mark class="hl hl-none" style="--i:5">no approval</mark></td>
+<td data-agent="opencode"><mark class="hl hl-none" style="--i:5">no approval</mark></td>
+</tr>
+<tr><th scope="row"><code>~/.claude/.credentials.json</code><small>Claude Code login token</small></th>
+<td data-agent="Claude Code"><mark class="hl hl-none" style="--i:6">no approval</mark></td>
+<td data-agent="Codex"><mark class="hl hl-none" style="--i:6">no approval</mark></td>
+<td data-agent="opencode"><mark class="hl hl-none" style="--i:6">no approval</mark></td>
+</tr>
+<tr><th scope="row"><code>~/.codex/auth.json</code><small>Codex login token</small></th>
+<td data-agent="Claude Code"><mark class="hl hl-none" style="--i:7">no approval</mark></td>
+<td data-agent="Codex"><mark class="hl hl-none" style="--i:7">no approval</mark></td>
+<td data-agent="opencode"><mark class="hl hl-none" style="--i:7">no approval</mark></td>
+</tr>
+<tr class="way-out"><th scope="row">Send it out<small>a way to get data off the machine</small></th>
+<td data-agent="Claude Code"><mark class="hl hl-none" style="--i:8">no approval</mark><small>a shell command with full network access (curl, git push)</small></td>
+<td data-agent="Codex"><mark class="hl hl-human" style="--i:8">after approval</mark><small>a shell command with full network access (curl, git push)</small></td>
+<td data-agent="opencode"><mark class="hl hl-none" style="--i:8">no approval</mark><small>a shell command with full network access (curl, git push)</small></td>
+</tr>
+<tr class="grade"><th scope="row">Grade</th>
+<td data-agent="Claude Code"><span class="ring">F</span></td>
+<td data-agent="Codex"><span class="ring">C</span></td>
+<td data-agent="opencode"><span class="ring">F</span></td>
+</tr>
+</tbody>
+</table>
+<!-- listing:end -->
+    </div>
+    <p class="legend"><mark class="hl hl-none hl-still">Highlighted</mark> means the agent can do it with nobody's
+      approval, <mark class="hl hl-human hl-still">pink</mark> only after you approve a step. All three agents can
+      read every credential here. Codex gets a C, not an F, because its sandbox closes the network and the only way
+      out needs your approval.</p>
+  </figure>
+
+  <section class="prose wrap" id="finds" aria-labelledby="finds-title">
+    <h2 id="finds-title">What the agents' own documentation says</h2>
+    <p>Every behaviour ifinjected relies on is cited, with the date it was checked, in
+      <a href="https://github.com/BhuwanJoshi-01/ifinjected/blob/main/src/ifinjected/agents/data.json">agents/data.json</a>.
+      A few of them surprise most people:</p>
+    <ul class="facts">
+      <li><strong>Claude Code runs read-only commands such as <code>cat</code> without a prompt, in every mode.</strong>
+        In the default mode, <code>cat ~/.ssh/id_ed25519</code> needs nobody's approval.
+        <a href="https://code.claude.com/docs/en/permissions">Permissions docs</a></li>
+      <li><strong>A <code>Read(~/.ssh/**)</code> deny rule does not stop a Python one-liner.</strong> Deny rules cover
+        Claude Code's file tools and the commands it recognises, not "arbitrary subprocesses that read or write files
+        indirectly". ifinjected reports such a rule as walked around, with its line.
+        <a href="https://code.claude.com/docs/en/permissions">Permissions docs</a></li>
+      <li><strong>Turning a sandbox on does not protect your keys.</strong> Claude Code's sandbox reads "most of the
+        machine, including credential files such as <code>~/.ssh</code> and <code>~/.aws/credentials</code>", and
+        Codex's read-only and workspace-write sandboxes start from read access to the whole disk.
+        <a href="https://code.claude.com/docs/en/sandboxing">Sandboxing docs</a>,
+        <a href="https://github.com/openai/codex/blob/main/codex-rs/protocol/src/permissions.rs">Codex source</a></li>
+      <li><strong>opencode has no sandbox and allows most tools by default.</strong> A default setup with credentials
+        on disk is an F. <a href="https://opencode.ai/docs/permissions/">Permissions docs</a></li>
+      <li><strong>One committed <code>.mcp.json</code> configures two agents.</strong> Copilot CLI also loads Claude
+        Code's <code>.mcp.json</code> and its hooks.
+        <a href="https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-config-dir-reference">Copilot CLI reference</a></li>
+    </ul>
+  </section>
+
+  <section class="prose wrap" id="grade" aria-labelledby="grade-title">
+    <h2 id="grade-title">How the grade is decided</h2>
+    <p>Each agent gets a grade from its <a href="https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/">lethal
+      trifecta</a>, Simon Willison's name for the three things that together let an attacker steal through an agent:</p>
+    <dl class="legs">
+      <dt>Private data</dt>
+      <dd>a credential it can read, with or without an approval;</dd>
+      <dt>Untrusted input</dt>
+      <dd>text someone else wrote: the repository, an issue, a dependency, a web page;</dd>
+      <dt>A way out</dt>
+      <dd>a shell with network access, a web fetch, an MCP server that writes elsewhere.</dd>
+    </dl>
+    <p>With all three open and no approval anywhere, one poisoned README can make the agent read a key and send it
+      away on its own: that is an F. A human approval in the way makes it a C; closing a leg makes it a B; an A has at
+      most one open. The machine's grade is its worst agent's, because an attacker picks the easiest one.
+      <a href="https://github.com/BhuwanJoshi-01/ifinjected/blob/main/docs/grading.md">The full rules</a></p>
+  </section>
+
+  <section class="prose wrap" id="prove" aria-labelledby="prove-title">
+    <h2 id="prove-title">Prove it on your machine</h2>
+    <p>A grade comes from configuration and documentation. <code>ifinjected prove --run</code> checks the claim: a
+      fixed probe calls <code>open()</code> and <code>close()</code> on each credential, never <code>read()</code>,
+      once directly and once inside Codex's own sandbox. With <code>--network</code> it also tries one connection out.</p>
+    <pre class="terminal"><code>$ ifinjected prove --run --network
+Codex: opened directly / inside codex sandbox
+  opened   opened   AWS config  ~/.aws/config
+  opened   opened   Docker config (may hold registry passwords)  ~/.docker/config.json
+  opened   opened   GitHub CLI login  ~/.config/gh/hosts.yml
+  opened   opened   npm config (may hold a token)  ~/.npmrc
+  …
+  network: refused to example.com:443 from inside the sandbox</code></pre>
+    <p class="fine">Part of what it printed on a Linux laptop running Codex: every credential file opened inside the
+      sandbox, and the network stayed closed.</p>
+  </section>
+
+  <section class="prose wrap" id="ci" aria-labelledby="ci-title">
+    <h2 id="ci-title">Catch pull requests that widen agent permissions</h2>
+    <p>A pull request that adds an MCP server, an allow rule or a hook to <code>.claude/settings.json</code>,
+      <code>.mcp.json</code>, <code>.codex/config.toml</code>, <code>.cursor/</code> or <code>opencode.json</code>
+      changes what every agent in the repository may do. The Action compares that configuration with the base branch,
+      fails the check when a change fails your policy, and marks the line that widened it.</p>
+    <pre class="terminal"><code># .github/workflows/agents.yml
+on: pull_request
+permissions:
+  contents: read
+  security-events: write
+jobs:
+  ifinjected:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: BhuwanJoshi-01/ifinjected@v0.1.0
+        id: ifinjected
+      - uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: ${{ steps.ifinjected.outputs.sarif }}</code></pre>
+    <p class="fine">Locally: <code>ifinjected diff --base origin/main</code>.</p>
+  </section>
+
+  <section class="prose wrap" id="promises" aria-labelledby="promises-title">
+    <h2 id="promises-title">What it promises</h2>
+    <ul class="facts">
+      <li><strong>It never prints, stores or logs a secret value.</strong> Credential files are found by location
+        and permissions; SSH keys are read up to 192 bytes to tell an encrypted key from an unencrypted one. A test
+        plants fake secrets everywhere and checks every output format for them.</li>
+      <li><strong>It never runs what an agent is configured to run.</strong> No MCP server, hook or helper is started.</li>
+      <li><strong>It reads only what it declares.</strong> A test records every file access during whole scans and
+        fails on anything not listed in <a href="https://github.com/BhuwanJoshi-01/ifinjected/blob/main/docs/what-is-read.md">what is read</a>.</li>
+      <li><strong>It writes nothing and sends nothing</strong>, except a file you name with <code>--output</code> and
+        the one connection <code>prove --network</code> asks for.</li>
+    </ul>
+    <p>ifinjected describes what a configuration allows. It is not a sandbox, and a clean report is not a guarantee.</p>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="wrap footer-row">
+    <p>MIT licensed. <a href="https://github.com/BhuwanJoshi-01/ifinjected">Source and issues</a>,
+      <a href="https://github.com/BhuwanJoshi-01/ifinjected/blob/main/docs/rules.md">every rule</a>,
+      <a href="https://github.com/BhuwanJoshi-01/ifinjected/blob/main/docs/cli.md">every command</a>.</p>
+    <p>Type: Newsreader and IBM Plex Mono, under the SIL Open Font License.</p>
+  </div>
+</footer>
+
+</body>
+</html>
