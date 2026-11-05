@@ -104,6 +104,30 @@
     "firefox-profiles": {
       "title": "Firefox: profiles, where Firefox stores your user data",
       "url": "https://support.mozilla.org/en-US/kb/profiles-where-firefox-stores-user-data"
+    },
+    "claude-data-usage": {
+      "title": "Claude Code: settings, credentials storage and local transcripts",
+      "url": "https://code.claude.com/docs/en/settings"
+    },
+    "codex-auth": {
+      "title": "Codex: configuration reference (CODEX_HOME, auth.json)",
+      "url": "https://learn.chatgpt.com/docs/config-file/config-reference"
+    },
+    "gemini-config": {
+      "title": "Gemini CLI: configuration reference (~/.gemini)",
+      "url": "https://github.com/google-gemini/gemini-cli/blob/main/docs/reference/configuration.md"
+    },
+    "opencode-config": {
+      "title": "opencode: config and data locations",
+      "url": "https://opencode.ai/docs/config/"
+    },
+    "copilot-config-dir": {
+      "title": "Copilot CLI: config directory reference (providers.json, session-state)",
+      "url": "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-config-dir-reference"
+    },
+    "dotenv": {
+      "title": "dotenv: .env files hold environment-specific secrets and are not committed",
+      "url": "https://github.com/motdotla/dotenv#readme"
     }
   },
   "items": [
@@ -557,6 +581,75 @@
         "chromium-user-data",
         "chromium-linux-storage",
         "firefox-profiles"
+      ]
+    },
+    {
+      "id": "agent.auth",
+      "title": "Coding agent login token",
+      "why": "The agent's own account: an injected agent can send the token away and keep using your subscription or API key.",
+      "level": "stat",
+      "paths": [
+        {
+          "base": "agent_role:auth",
+          "glob": "."
+        }
+      ],
+      "sources": [
+        "claude-data-usage",
+        "codex-auth",
+        "gemini-config",
+        "opencode-config",
+        "copilot-config-dir"
+      ]
+    },
+    {
+      "id": "agent.transcripts",
+      "title": "Coding agent transcripts and history",
+      "why": "Plain text that keeps whatever tools printed, including secrets read in earlier sessions.",
+      "level": "stat",
+      "paths": [
+        {
+          "base": "agent_role:transcripts",
+          "glob": "."
+        },
+        {
+          "base": "agent_role:history",
+          "glob": "."
+        }
+      ],
+      "sources": [
+        "claude-data-usage",
+        "codex-auth",
+        "copilot-config-dir"
+      ]
+    },
+    {
+      "id": "env.file",
+      "title": ".env file",
+      "why": "Application secrets for the project at hand: database passwords, API keys, signing secrets.",
+      "level": "stat",
+      "deep_level": "full",
+      "deep_flag": "include_env",
+      "paths": [
+        {
+          "base": "env_dirs",
+          "glob": "."
+        },
+        {
+          "base": "env_dirs",
+          "glob": ".env"
+        },
+        {
+          "base": "env_dirs",
+          "glob": ".env.*"
+        },
+        {
+          "base": "workspace",
+          "glob": "*"
+        }
+      ],
+      "sources": [
+        "dotenv"
       ]
     }
   ]
