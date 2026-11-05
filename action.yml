@@ -1,0 +1,67 @@
+name: ifinjected
+description: Flag pull requests that widen what coding agents (Claude Code, Codex, Gemini CLI, Cursor, opencode, Copilot CLI) may do in this repository.
+author: BhuwanJoshi-01
+branding:
+  icon: shield
+  color: red
+
+inputs:
+  base:
+    description: >-
+      The ref to compare with. Empty: the pull request's base commit, or the previous
+      commit on a push.
+    default: ""
+  strict:
+    description: Fail the step when a change fails under the repository's policy (.ifinjected.toml).
+    default: "true"
+  sarif:
+    description: Where to write the SARIF report (for github/codeql-action/upload-sarif).
+    default: ifinjected.sarif
+  working-directory:
+    description: The repository to check.
+    default: "."
+
+outputs:
+  sarif:
+    description: The path of the SARIF report.
+    value: ${{ steps.diff.outputs.sarif }}
+
+runs:
+  using: composite
+  steps:
+    - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+
+    - name: Find the base to compare with
+      id: base
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        INPUT_BASE: ${{ inputs.base }}
+        PR_BASE: ${{ github.event.pull_request.base.sha }}
+        PUSH_BEFORE: ${{ github.event.before }}
+      run: |
+        base="${INPUT_BASE:-${PR_BASE:-$PUSH_BEFORE}}"
+        if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then base="HEAD~1"; fi
+        # A shallow checkout may not have the base yet; fetching it is the action's only write.
+        if ! git rev-parse --verify --quiet "$base^{commit}" > /dev/null; then
+          git fetch --quiet --no-tags --depth=1 origin "$base"
+        fi
+        echo "ref=$base" >> "$GITHUB_OUTPUT"
+
+    - name: Compare the committed agent configuration
+      id: diff
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        BASE: ${{ steps.base.outputs.ref }}
+        STRICT: ${{ inputs.strict }}
+        SARIF: ${{ inputs.sarif }}
+      run: |
+        # Installed from this action's own checkout, so the version matches the tag in uses:.
+        args=(diff --base "$BASE" --head HEAD --repo . --format sarif)
+        [ "$STRICT" = "true" ] && args+=(--strict)
+        echo "sarif=$(cd "$(dirname "$SARIF")" && pwd)/$(basename "$SARIF")" >> "$GITHUB_OUTPUT"
+        status=0
+        uvx --quiet --from "$GITHUB_ACTION_PATH" ifinjected "${args[@]}" > "$SARIF" || status=$?
+        uvx --quiet --from "$GITHUB_ACTION_PATH" ifinjected diff --base "$BASE" --head HEAD --repo . || true
+        exit "$status"

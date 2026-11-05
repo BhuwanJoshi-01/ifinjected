@@ -1,0 +1,63 @@
+name: Action
+
+# Runs this repository's action on a pull request that widens agent permissions, as a
+# user's workflow would, and on one that does not.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  widening:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: A repository whose second commit adds an MCP server and an allow rule
+        run: |
+          repo="$RUNNER_TEMP/demo"
+          git init -q -b main "$repo"
+          cd "$repo"
+          git config user.name test && git config user.email test@example.invalid
+          mkdir -p .claude
+          echo '{"permissions": {"deny": ["Read(./.env)"]}}' > .claude/settings.json
+          git add -A && git commit -q -m base
+          echo '{"permissions": {"allow": ["Bash(python3 *)"]}}' > .claude/settings.json
+          echo '{"mcpServers": {"helper": {"command": "node", "args": ["helper.js"]}}}' > .mcp.json
+          git add -A && git commit -q -m widen
+
+      - name: The strict check fails on the widening commit
+        id: strict
+        continue-on-error: true
+        uses: ./
+        with:
+          base: HEAD~1
+          working-directory: ${{ runner.temp }}/demo
+          sarif: ${{ runner.temp }}/widen.sarif
+
+      - name: It failed and still wrote its report
+        env:
+          OUTCOME: ${{ steps.strict.outcome }}
+          REPORT: ${{ steps.strict.outputs.sarif }}
+        run: |
+          [ "$OUTCOME" = failure ] || { echo "::error::expected the strict check to fail, got $OUTCOME"; exit 1; }
+          python3 -c "import json, sys; r = json.load(open(sys.argv[1]))['runs'][0]['results']; ids = {x['ruleId'] for x in r}; assert {'IFJ-DIFF-001', 'IFJ-DIFF-002', 'IFJ-DIFF-003'} <= ids, ids" "$REPORT"
+
+  unchanged:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: A repository whose second commit changes nothing agents read
+        run: |
+          repo="$RUNNER_TEMP/quiet"
+          git init -q -b main "$repo"
+          cd "$repo"
+          git config user.name test && git config user.email test@example.invalid
+          echo hello > README.md && git add -A && git commit -q -m base
+          echo world >> README.md && git add -A && git commit -q -m docs
+      - uses: ./
+        with:
+          base: HEAD~1
+          working-directory: ${{ runner.temp }}/quiet
