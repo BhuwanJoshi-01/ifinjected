@@ -1,0 +1,33 @@
+name: Feature request
+description: A new agent, a new credential location, or a new check
+labels: ["type: feature"]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of addition?
+      options:
+        - Support a new coding agent
+        - Find a new kind of credential or sensitive file
+        - A new check or rule
+        - Output, CI or integration
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What should ifinjected tell you that it doesn't today?
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: Documentation or source
+      description: Links to the agent's docs or code that describe the behaviour. Every agent fact in ifinjected needs a source.
+  - type: textarea
+    id: example
+    attributes:
+      label: Example configuration
+      description: A minimal, fake example (no real credentials).
+      render: text

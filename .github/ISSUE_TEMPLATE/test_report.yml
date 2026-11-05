@@ -1,0 +1,42 @@
+name: Test report
+description: You ran ifinjected on a real setup; tell us whether it was right
+labels: ["type: test report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Reports from real machines are the most useful thing you can contribute, even when everything was correct.
+        **Never paste real credentials**; the report is redacted, check it before posting.
+  - type: input
+    id: version
+    attributes:
+      label: Versions
+      description: "`ifinjected --version`, the agents and their versions"
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: Operating system
+    validations:
+      required: true
+  - type: dropdown
+    id: verdict
+    attributes:
+      label: Was the result right?
+      options:
+        - Yes, it matched what I know about my setup
+        - Partly, details below
+        - No, details below
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: What matched, what didn't, and how you checked (for example `ifinjected prove --run`).
+  - type: textarea
+    id: report
+    attributes:
+      label: Redacted report
+      render: markdown

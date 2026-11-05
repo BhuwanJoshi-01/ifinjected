@@ -1,0 +1,60 @@
+name: Bug report
+description: A crash, something reachable that was missed, or a false alarm
+labels: ["type: bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! **Never paste real tokens, keys, `.env` values or credential files.** Reports from
+        `ifinjected report` are redacted by default; check them anyway before posting.
+  - type: input
+    id: command
+    attributes:
+      label: Exact command
+      placeholder: ifinjected scan --agent claude_code
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Versions
+      description: Output of `ifinjected --version` and of the agent involved (e.g. `claude --version`, `codex --version`)
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind of problem
+      options:
+        - False alarm (says the agent can reach something it can't)
+        - Missed exposure (the agent can reach something that wasn't reported)
+        - Wrong agent configuration (a setting read or merged wrongly)
+        - A secret or identifying detail in the output
+        - Crash, hang or error
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: setup
+    attributes:
+      label: Agent setup
+      description: Which agent, how it is launched (terminal, IDE, headless), sandbox and permission settings, MCP servers. Describe them; don't paste credentials.
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: report
+    attributes:
+      label: Redacted report
+      description: "`ifinjected report --format markdown --output -` (redacted by default)"
+      render: markdown
+  - type: input
+    id: system
+    attributes:
+      label: Operating system
+      placeholder: e.g. Ubuntu 26.04, macOS 16, Windows 11
