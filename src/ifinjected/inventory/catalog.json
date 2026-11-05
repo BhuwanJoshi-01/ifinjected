@@ -68,6 +68,42 @@
     "kubeconfig": {
       "title": "Kubernetes: organizing cluster access using kubeconfig files",
       "url": "https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/"
+    },
+    "hf-env": {
+      "title": "huggingface_hub: environment variables (HF_TOKEN_PATH, HF_HOME, XDG_CACHE_HOME)",
+      "url": "https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables"
+    },
+    "supabase-login": {
+      "title": "Supabase CLI: supabase login (falls back to ~/.supabase/access-token)",
+      "url": "https://supabase.com/docs/reference/cli/supabase-login"
+    },
+    "terraform-login": {
+      "title": "Terraform: terraform login saves the token in plain text in credentials.tfrc.json",
+      "url": "https://developer.hashicorp.com/terraform/cli/commands/login"
+    },
+    "vault-token-helper": {
+      "title": "Vault: the default token helper stores the token in ~/.vault-token",
+      "url": "https://developer.hashicorp.com/vault/docs/commands/token-helper"
+    },
+    "passwordstore": {
+      "title": "pass: the standard unix password manager (~/.password-store, gpg)",
+      "url": "https://www.passwordstore.org/"
+    },
+    "1password-cli": {
+      "title": "1Password CLI reference: configuration directory and app integration",
+      "url": "https://developer.1password.com/docs/cli/reference/"
+    },
+    "chromium-user-data": {
+      "title": "Chromium: user data directory locations per system",
+      "url": "https://chromium.googlesource.com/chromium/src/+/main/docs/user_data_dir.md"
+    },
+    "chromium-linux-storage": {
+      "title": "Chromium on Linux: how stored secrets are encrypted with a key from the keyring",
+      "url": "https://chromium.googlesource.com/chromium/src/+/main/docs/linux/password_storage.md"
+    },
+    "firefox-profiles": {
+      "title": "Firefox: profiles, where Firefox stores your user data",
+      "url": "https://support.mozilla.org/en-US/kb/profiles-where-firefox-stores-user-data"
     }
   },
   "items": [
@@ -382,6 +418,145 @@
       ],
       "sources": [
         "kubeconfig"
+      ]
+    },
+    {
+      "id": "huggingface.token",
+      "title": "Hugging Face token",
+      "why": "Reads private models and datasets, and with write scope pushes to them.",
+      "level": "stat",
+      "paths": [
+        {
+          "base": "huggingface",
+          "glob": "."
+        }
+      ],
+      "sources": [
+        "hf-env"
+      ]
+    },
+    {
+      "id": "supabase.token",
+      "title": "Supabase access token",
+      "why": "Manages every Supabase project of the account: databases, keys, functions.",
+      "level": "stat",
+      "paths": [
+        {
+          "base": "home",
+          "glob": ".supabase/access-token"
+        }
+      ],
+      "sources": [
+        "supabase-login"
+      ]
+    },
+    {
+      "id": "terraform.token",
+      "title": "Terraform Cloud token",
+      "why": "Runs plans and applies, and reads state, which often holds more secrets.",
+      "level": "stat",
+      "paths": [
+        {
+          "base": "home",
+          "glob": ".terraform.d/credentials.tfrc.json"
+        },
+        {
+          "base": "appdata",
+          "glob": "terraform.d/credentials.tfrc.json"
+        }
+      ],
+      "sources": [
+        "terraform-login"
+      ]
+    },
+    {
+      "id": "vault.token",
+      "title": "Vault token",
+      "why": "Reads every secret its policies allow, from the place you keep secrets.",
+      "level": "stat",
+      "paths": [
+        {
+          "base": "home",
+          "glob": ".vault-token"
+        }
+      ],
+      "sources": [
+        "vault-token-helper"
+      ]
+    },
+    {
+      "id": "pass.store",
+      "title": "pass password store",
+      "why": "Encrypted with gpg; while gpg-agent holds the key, any process running as you can decrypt it.",
+      "level": "stat",
+      "paths": [
+        {
+          "base": "home",
+          "glob": ".password-store"
+        },
+        {
+          "base": "env:PASSWORD_STORE_DIR",
+          "glob": "."
+        }
+      ],
+      "sources": [
+        "passwordstore"
+      ]
+    },
+    {
+      "id": "onepassword.cli",
+      "title": "1Password CLI",
+      "why": "With the app integration, `op` reads items as long as the app is unlocked.",
+      "level": "stat",
+      "paths": [
+        {
+          "base": "xdg_config",
+          "glob": "op"
+        },
+        {
+          "base": "home",
+          "glob": ".op"
+        }
+      ],
+      "sources": [
+        "1password-cli"
+      ]
+    },
+    {
+      "id": "browser.cookies",
+      "title": "Browser session cookies",
+      "why": "A copied cookie database signs in to every site you are signed in to, without a password or a second factor.",
+      "level": "stat",
+      "paths": [
+        {
+          "base": "chromium",
+          "glob": "."
+        },
+        {
+          "base": "chromium",
+          "glob": "*"
+        },
+        {
+          "base": "chromium",
+          "glob": "*/Network/Cookies"
+        },
+        {
+          "base": "chromium",
+          "glob": "*/Cookies"
+        },
+        {
+          "base": "firefox",
+          "glob": "."
+        },
+        {
+          "base": "firefox",
+          "glob": "*/cookies.sqlite"
+        }
+      ],
+      "sources": [
+        "chromium-user-data",
+        "chromium-linux-storage",
+        "firefox-profiles"
       ]
     }
   ]
