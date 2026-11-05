@@ -82,6 +82,7 @@ select = [
 known-first-party = ["ifinjected", "tests"]
 
 [tool.ruff.lint.per-file-ignores]
+"src/ifinjected/reports/card.py" = ["E501"]  # SVG markup reads best one element per line
 "tests/**" = [
     "S101",  # assert is how pytest works
     "S105", "S106",  # fake secrets are the point of the redaction and canary tests
