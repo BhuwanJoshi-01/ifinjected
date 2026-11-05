@@ -22,7 +22,7 @@ from ifinjected.homes import Platform
 _BASES = (
     "home", "xdg_config", "xdg_data", "appdata", "gcloud", "azure", "gh", "cargo", "docker",
     "kubeconfig", "huggingface", "chromium", "firefox", "env_dirs", "root", "docker_host",
-    "workspace", "workspace_parents",
+    "agent_config", "agent_config_dir", "workspace", "workspace_parents",
 )  # fmt: skip
 """Also ``env:NAME``: the path in environment variable NAME (glob ``.`` for the path itself),
 and ``agent_role:ROLE``: every agent's user-scope location with that role."""
@@ -124,6 +124,21 @@ def _base_dirs(base: str, platform: Platform, workspace: Path | None) -> list[Pa
         return [value] if value is not None else []
     if base.startswith("agent_role:"):
         return [path for _, path in agent_role_paths(platform, base.removeprefix("agent_role:"))]
+    if base in {"agent_config", "agent_config_dir"}:
+        from ifinjected.homes import agent_locations
+        from ifinjected.models import AgentId
+
+        directories = {"managed_settings_dir", "policies", "profiles", "config_dir"}
+        data = {"auth", "transcripts", "history", "accounts"}
+        found = []
+        for agent in AgentId:
+            for location in agent_locations(agent, platform, workspace):
+                if location.role in data:
+                    continue
+                is_dir = location.role in directories
+                if (base == "agent_config_dir") == is_dir:
+                    found.append(location.path)
+        return found
     if base == "env_dirs":
         if workspace is None:
             return []

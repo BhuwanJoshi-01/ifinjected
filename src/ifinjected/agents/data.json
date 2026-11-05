@@ -1,0 +1,91 @@
+{
+  "retrieved": "2026-11-05",
+  "sources": {
+    "claude-permissions": {
+      "title": "Claude Code: Configure permissions",
+      "url": "https://code.claude.com/docs/en/permissions"
+    },
+    "claude-sandboxing": {
+      "title": "Claude Code: Sandboxing",
+      "url": "https://code.claude.com/docs/en/sandboxing"
+    },
+    "claude-settings": {
+      "title": "Claude Code: Settings (where settings live, precedence)",
+      "url": "https://code.claude.com/docs/en/settings"
+    },
+    "claude-mcp": {
+      "title": "Claude Code: MCP (scopes, project server approvals and workspace trust)",
+      "url": "https://code.claude.com/docs/en/mcp"
+    },
+    "claude-hooks": {
+      "title": "Claude Code: Hooks",
+      "url": "https://code.claude.com/docs/en/hooks"
+    }
+  },
+  "facts": {
+    "claude.read_inside": {
+      "text": "File reads need no approval within the working directory and additional directories; outside them, Manual mode asks.",
+      "source": "claude-permissions"
+    },
+    "claude.readonly_commands": {
+      "text": "Read-only Bash commands such as cat, head, tail, grep and find run without a permission prompt in every mode, except as blockReadsOutsideWorkingDirectories changes for paths outside the working directories.",
+      "source": "claude-permissions"
+    },
+    "claude.deny_scope": {
+      "text": "Read and Edit deny rules apply to the built-in file tools, to file commands Claude Code recognises in Bash (cat, head, tail, sed, tee) and to redirection targets. They don't apply to a command that reads files without naming them, or to arbitrary subprocesses that read files indirectly, like a Python or Node script that opens files itself.",
+      "source": "claude-permissions"
+    },
+    "claude.precedence": {
+      "text": "Rules are evaluated in order: deny, then ask, then allow; the first match in that order decides, and specificity doesn't change it.",
+      "source": "claude-permissions"
+    },
+    "claude.anchors": {
+      "text": "//path is absolute, ~/path is under home, /path is relative to the settings source (the primary working directory for project and local settings, ~/.claude for user settings), and path or ./path is relative to the current directory; bare names match at any depth.",
+      "source": "claude-permissions"
+    },
+    "claude.modes": {
+      "text": "Permission modes: default (Manual), acceptEdits, plan, auto (a classifier reviews actions), dontAsk (denies what would prompt), bypassPermissions (skips prompts).",
+      "source": "claude-permissions"
+    },
+    "claude.block_reads_outside": {
+      "text": "permissions.blockReadsOutsideWorkingDirectories makes the file tools refuse reads outside the working directories in every permission mode.",
+      "source": "claude-permissions"
+    },
+    "claude.sandbox_off": {
+      "text": "The sandbox is off by default; it runs on macOS (Seatbelt), Linux and WSL2 (bubblewrap). On native Windows, commands run unsandboxed.",
+      "source": "claude-sandboxing"
+    },
+    "claude.sandbox_reads": {
+      "text": "The sandbox allows reading most of the machine, including credential files such as ~/.ssh and ~/.aws/credentials, unless denyRead or Read deny rules say otherwise; the two are merged.",
+      "source": "claude-sandboxing"
+    },
+    "claude.sandbox_outside": {
+      "text": "Built-in file and web tools follow permission rules, not the sandbox; hooks, local MCP servers and helper commands such as apiKeyHelper run with your full access.",
+      "source": "claude-sandboxing"
+    },
+    "claude.sandbox_auto_allow": {
+      "text": "autoAllowBashIfSandboxed defaults to true: sandboxed Bash commands run without a prompt.",
+      "source": "claude-sandboxing"
+    },
+    "claude.sandbox_escape": {
+      "text": "Commands in excludedCommands run outside the sandbox, and Claude can ask to retry a failed command unsandboxed unless allowUnsandboxedCommands is false.",
+      "source": "claude-sandboxing"
+    },
+    "claude.sandbox_unavailable": {
+      "text": "When the platform doesn't support the sandbox or its dependency check fails, Claude Code runs commands without sandboxing unless sandbox.failIfUnavailable is true.",
+      "source": "claude-sandboxing"
+    },
+    "claude.sandbox_network": {
+      "text": "Sandboxed commands reach the network only through a proxy that checks each host against allowedDomains, which start empty.",
+      "source": "claude-sandboxing"
+    },
+    "claude.trust": {
+      "text": "Project allow rules and additional directories wait for workspace trust; deny and ask rules apply at once.",
+      "source": "claude-permissions"
+    },
+    "claude.mcp_scopes": {
+      "text": "MCP servers come from ~/.claude.json (user and local scope), the project's .mcp.json (approved per server or with enableAllProjectMcpServers) and managed-mcp.json.",
+      "source": "claude-mcp"
+    }
+  }
+}

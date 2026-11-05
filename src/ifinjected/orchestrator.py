@@ -8,6 +8,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from ifinjected import __version__
+from ifinjected.agents import inspect_agents
 from ifinjected.homes import Platform
 from ifinjected.inventory import collect_inventory
 from ifinjected.inventory.base import Context
@@ -27,4 +28,18 @@ def inspect_inventory(
         policy=policy,
         items=tuple(found.items),
         skipped=tuple(found.skipped),
+    )
+
+
+def inspect_agent_policies(
+    platform: Platform, policy: Policy, workspace: Path | None = None
+) -> Snapshot:
+    """Every agent's configuration layers and effective policy for ``workspace``."""
+    return Snapshot(
+        tool_version=__version__,
+        created_at=utc_timestamp(),
+        system=platform.system.value,
+        workspace=str(workspace) if workspace is not None else None,
+        policy=policy,
+        agents=inspect_agents(platform, policy, workspace),
     )

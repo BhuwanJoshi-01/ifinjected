@@ -144,6 +144,14 @@
     "google-adc-env": {
       "title": "Google Cloud: GOOGLE_APPLICATION_CREDENTIALS names a credential file",
       "url": "https://cloud.google.com/docs/authentication/application-default-credentials#GAC"
+    },
+    "claude-settings": {
+      "title": "Claude Code: settings files and precedence",
+      "url": "https://code.claude.com/docs/en/settings"
+    },
+    "claude-sandboxing": {
+      "title": "Claude Code: sandboxing, platforms and dependencies (bubblewrap on Linux)",
+      "url": "https://code.claude.com/docs/en/sandboxing"
     }
   },
   "items": [
@@ -742,6 +750,52 @@
       ],
       "sources": [
         "gpg-agent"
+      ]
+    },
+    {
+      "id": "agent.config",
+      "title": "Coding agent configuration",
+      "why": "Read as data, never run: it decides what the agent may do. Not a secret by itself, though values such as MCP environment variables are dropped while parsing.",
+      "level": "full",
+      "paths": [
+        {
+          "base": "agent_config",
+          "glob": "."
+        },
+        {
+          "base": "agent_config_dir",
+          "glob": "."
+        },
+        {
+          "base": "agent_config_dir",
+          "glob": "*.json"
+        }
+      ],
+      "sources": [
+        "claude-settings"
+      ]
+    },
+    {
+      "id": "sandbox.tools",
+      "title": "Sandbox programs",
+      "why": "Whether an agent's OS sandbox can run here is decided by whether its program exists; it is never run.",
+      "level": "stat",
+      "paths": [
+        {
+          "base": "root",
+          "glob": "usr/bin/bwrap"
+        },
+        {
+          "base": "root",
+          "glob": "usr/local/bin/bwrap"
+        },
+        {
+          "base": "root",
+          "glob": "bin/bwrap"
+        }
+      ],
+      "sources": [
+        "claude-sandboxing"
       ]
     }
   ]

@@ -18,9 +18,10 @@ from ifinjected import __version__
 from ifinjected.config import PolicyError, apply_overrides, load_policy
 from ifinjected.exit_codes import ExitCode
 from ifinjected.homes import Platform
-from ifinjected.models import Policy
-from ifinjected.orchestrator import inspect_inventory
+from ifinjected.models import AgentId, Policy
+from ifinjected.orchestrator import inspect_agent_policies, inspect_inventory
 from ifinjected.privacy import RedactionContext, Redactor, redacted_with_counts
+from ifinjected.reports.agents import render_agents
 from ifinjected.reports.terminal import render_inventory, render_policy
 
 HELP = (
@@ -123,6 +124,30 @@ def inventory(
     snapshot = inspect_inventory(Platform.current(), effective, root)
     redacted, counts = redacted_with_counts(snapshot)
     render_inventory(dataclasses.replace(redacted, redactions=counts), Console(highlight=False))
+
+
+_AGENT_OPTION = typer.Option(
+    "--agent", help="Only this agent (repeat for several). Default: every agent found."
+)
+
+
+@app.command()
+def agents(
+    workspace: Annotated[Path, _WORKSPACE_OPTION] = Path(),
+    agent: Annotated[list[AgentId] | None, _AGENT_OPTION] = None,
+) -> None:
+    """Show how each coding agent is configured for this workspace, layer by layer.
+
+    Settings files are read as data, never run: the permission mode, how each way of
+    reading a file is gated, the read rules with the line they come from, the sandbox,
+    and the MCP servers and hooks the agent would start.
+    """
+    redactor = Redactor(RedactionContext.current())
+    root = workspace.absolute()
+    effective = apply_overrides(_policy_or_exit(root, redactor), agents=tuple(agent or ()))
+    snapshot = inspect_agent_policies(Platform.current(), effective, root)
+    redacted, counts = redacted_with_counts(snapshot)
+    render_agents(dataclasses.replace(redacted, redactions=counts), Console(highlight=False))
 
 
 def main() -> None:
