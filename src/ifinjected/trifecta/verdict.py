@@ -142,8 +142,13 @@ def _exfil(report: AgentReport) -> Leg:
         if channel.sandboxed:
             network = policy.sandbox.network
             if network is Network.NONE:
-                gate = Gate.HUMAN if gate.opens else gate  # unlisted hosts prompt
-            what = "a sandboxed shell command to an allowed host"
+                unlisted = policy.sandbox.unlisted_hosts
+                gate = max(gate, unlisted, key=_GATE_ORDER.index) if gate.opens else gate
+                what = "a sandboxed command connecting to a new host"
+            elif network is Network.OPEN:
+                what = "a sandboxed command with network access"
+            else:
+                what = "a sandboxed command to an allowed host"
         else:
             what = "a shell command with full network access (curl, git push)"
         members.append(Member(what, gate))

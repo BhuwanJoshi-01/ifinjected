@@ -7,6 +7,7 @@ from pathlib import Path
 
 from ifinjected.agents.base import AgentReport
 from ifinjected.agents.claude_code import inspect_claude_code
+from ifinjected.agents.codex import inspect_codex
 from ifinjected.homes import Platform
 from ifinjected.models import AgentId, Policy
 
@@ -14,6 +15,7 @@ Adapter = Callable[[Platform, Policy, Path | None], AgentReport]
 
 ADAPTERS: dict[AgentId, Adapter] = {
     AgentId.CLAUDE_CODE: inspect_claude_code,
+    AgentId.CODEX: inspect_codex,
 }
 """Adapters by agent; agents without one yet are reported as not inspected."""
 
