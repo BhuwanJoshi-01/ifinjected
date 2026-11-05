@@ -6,7 +6,9 @@ from rich.console import Console
 from rich.text import Text
 
 from ifinjected.agents.base import AgentReport
-from ifinjected.models import Snapshot, SourceRef
+from ifinjected.inventory.environment import ENVIRONMENT
+from ifinjected.models import Reach, SensitiveItem, Snapshot, SourceRef
+from ifinjected.policy.exposure import Exposure
 from ifinjected.policy.model import Channel, ChannelPolicy, Gate
 from ifinjected.reports.terminal import display_path, redaction_line
 
@@ -120,13 +122,64 @@ def render_agent(report: AgentReport, console: Console) -> None:
         console.print(Text(f"  Note: {note}", style="yellow"))
 
 
+_REACH_TEXT = {
+    Reach.NO_APPROVAL: ("without approval", "bold red"),
+    Reach.BYPASSABLE_RULE: ("around a deny rule", "bold red"),
+    Reach.AFTER_APPROVAL: ("after an approval", "yellow"),
+    Reach.BLOCKED_BY_RULE: ("blocked by a rule", "green"),
+    Reach.BLOCKED_BY_SANDBOX: ("blocked by the sandbox", "green"),
+    Reach.UNKNOWN: ("undecided", "dim"),
+}
+_CHANNEL_VIA = {
+    Channel.FILE_TOOL: "its file tools",
+    Channel.SHELL_RECOGNIZED: "a read-only command such as cat",
+    Channel.SHELL_ARBITRARY: "a command that opens the file itself",
+    Channel.MCP: "an MCP server",
+    Channel.HOOK: "a hook",
+}
+
+
+def render_exposures(
+    exposures: list[Exposure], items: dict[tuple[str, str], SensitiveItem], console: Console
+) -> None:
+    shown = [e for e in exposures if e.reach is not Reach.NOT_PRESENT]
+    if not shown:
+        return
+    console.print(Text("  What an injected agent could reach", style="bold"))
+    for exposure in shown:
+        text, style = _REACH_TEXT[exposure.reach]
+        if exposure.reach is Reach.AFTER_APPROVAL and exposure.gate is Gate.AUTOMATED:
+            text, style = "after the classifier", "bold yellow"
+        item = items.get((exposure.item, exposure.path))
+        title = item.title if item else exposure.item
+        line = Text("    ")
+        line.append(f"{text:<24}", style=style)
+        line.append(title)
+        console.print(line)
+        detail = Text(f"    {'':<24}{display_path(exposure.path)}", style="dim")
+        if exposure.channel is not None and exposure.reach.reachable:
+            via = _CHANNEL_VIA[exposure.channel]
+            if exposure.path == ENVIRONMENT:
+                via = "a shell command such as env"
+            detail.append(f" · via {via}")
+            if exposure.sandboxed:
+                detail.append(" in the sandbox")
+        if exposure.bypassed is not None:
+            detail.append(f" · goes around {where(exposure.bypassed)}")
+        if exposure.uncertain:
+            detail.append(" · uncertain")
+        console.print(detail)
+
+
 def render_agents(snapshot: Snapshot, console: Console) -> None:
     if not snapshot.agents:
         console.print(Text("No supported coding agent was found on this machine."))
+    items = {(i.id, i.path): i for i in snapshot.items}
     for index, report in enumerate(snapshot.agents):
         if index:
             console.print()
         render_agent(report, console)
+        render_exposures([e for e in snapshot.exposures if e.agent is report.agent], items, console)
     line = redaction_line(snapshot)
     if line:
         console.print()

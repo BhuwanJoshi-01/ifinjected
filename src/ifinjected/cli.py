@@ -19,7 +19,7 @@ from ifinjected.config import PolicyError, apply_overrides, load_policy
 from ifinjected.exit_codes import ExitCode
 from ifinjected.homes import Platform
 from ifinjected.models import AgentId, Policy
-from ifinjected.orchestrator import inspect_agent_policies, inspect_inventory
+from ifinjected.orchestrator import inspect_all, inspect_inventory
 from ifinjected.privacy import RedactionContext, Redactor, redacted_with_counts
 from ifinjected.reports.agents import render_agents
 from ifinjected.reports.terminal import render_inventory, render_policy
@@ -145,7 +145,7 @@ def agents(
     redactor = Redactor(RedactionContext.current())
     root = workspace.absolute()
     effective = apply_overrides(_policy_or_exit(root, redactor), agents=tuple(agent or ()))
-    snapshot = inspect_agent_policies(Platform.current(), effective, root)
+    snapshot = inspect_all(Platform.current(), effective, root)
     redacted, counts = redacted_with_counts(snapshot)
     render_agents(dataclasses.replace(redacted, redactions=counts), Console(highlight=False))
 

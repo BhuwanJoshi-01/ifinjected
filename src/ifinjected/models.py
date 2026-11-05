@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ifinjected.agents.base import AgentReport
+    from ifinjected.policy.exposure import Exposure
 
 SCHEMA_VERSION = 1
 """Version of the snapshot/JSON report layout; bumped only for incompatible changes."""
@@ -358,6 +359,7 @@ class Snapshot:
     items: tuple[SensitiveItem, ...] = ()
     skipped: tuple[SkippedFile, ...] = ()
     agents: tuple[AgentReport, ...] = ()
+    exposures: tuple[Exposure, ...] = ()
     probe_failures: tuple[ProbeFailure, ...] = ()
     findings: tuple[Finding, ...] = ()
     redactions: tuple[RedactionCount, ...] = ()

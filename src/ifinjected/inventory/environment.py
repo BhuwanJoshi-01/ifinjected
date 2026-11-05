@@ -42,6 +42,9 @@ _NOT_SECRETS = re.compile(
 """Variables that *point at* a credential (a socket, a file) rather than hold one. Files
 and sockets are reported where they are found."""
 
+ENVIRONMENT = "environment of this shell"
+"""The ``path`` of items that live in the environment, not in a file."""
+
 _DATABASE_URLS = re.compile(r"^(?:DATABASE|POSTGRES|MYSQL|MONGO(?:DB)?|REDIS)_URL$")
 
 
@@ -66,7 +69,7 @@ def _variables(p: Platform) -> Collected:
             SensitiveItem(
                 id="env.variables",
                 title="Service credentials in the environment",
-                path="environment of this shell",
+                path=ENVIRONMENT,
                 severity=Severity.HIGH,
                 facts=(Evidence("environment", "variables", ", ".join(known)),),
             )
@@ -76,7 +79,7 @@ def _variables(p: Platform) -> Collected:
             SensitiveItem(
                 id="env.variables",
                 title="Secret-looking variables in the environment",
-                path="environment of this shell",
+                path=ENVIRONMENT,
                 severity=Severity.MEDIUM,
                 facts=(Evidence("environment", "variables", ", ".join(other)),),
             )
