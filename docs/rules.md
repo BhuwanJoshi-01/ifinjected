@@ -397,6 +397,54 @@ Family `trifecta`, default level `deny` (never more than a warning).
 Sources: <https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/>
 
 
+# Changes in a pull request
+
+## IFJ-DIFF-001: The change gives agents more permission
+
+A pull request adds an allow rule, an extra working directory, an allowed host or
+command, or sets a mode that asks less (``bypassPermissions``, ``danger-full-access``,
+``never``, ``allow-all``, ``insecure_none``). Every agent that works in the
+repository gets it the moment the change is checked out.
+
+Family `diff`, default level `deny`.
+
+## IFJ-DIFF-002: The change removes a deny or ask rule
+
+A pull request removes a deny or ask rule (or a Gemini CLI tool exclusion): what was
+refused or asked for runs without a prompt afterwards.
+
+Family `diff`, default level `deny`.
+
+## IFJ-DIFF-003: The change adds an MCP server
+
+A pull request adds an MCP server to committed configuration. A local server is a
+program that runs with the user's full access when the agent starts in the
+repository; Claude Code under ``claude -p`` connects project servers without asking.
+
+Family `diff`, default level `deny`.
+
+## IFJ-DIFF-004: The change adds or changes a hook or helper
+
+A pull request adds or changes a hook or a helper command (``apiKeyHelper``). It runs
+outside any sandbox, with the user's full access, on every matching event.
+
+Family `diff`, default level `deny`.
+
+## IFJ-DIFF-005: The change weakens a sandbox
+
+A pull request turns a sandbox off or lets commands leave it.
+
+Family `diff`, default level `deny`.
+
+## IFJ-DIFF-006: The change redirects an agent's traffic
+
+A pull request sets an environment variable that sends the agent's API or web
+traffic somewhere else (``ANTHROPIC_BASE_URL``, ``HTTPS_PROXY``…): everything the
+agent sends, prompts and file contents included, can be read there.
+
+Family `diff`, default level `deny`.
+
+
 # Configuration
 
 ## IFJ-CONFIG-001: Agent configuration could not be read

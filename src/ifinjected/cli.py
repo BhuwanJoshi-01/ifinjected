@@ -278,6 +278,68 @@ def report(
     typer.echo(f"Wrote {output}")
 
 
+@app.command()
+def diff(
+    base: Annotated[
+        str,
+        typer.Option("--base", metavar="REF", help="The ref to compare with (e.g. origin/main)."),
+    ],
+    head: Annotated[
+        str, typer.Option("--head", metavar="REF", help="The ref with the change.")
+    ] = "HEAD",
+    repo: Annotated[
+        Path, typer.Option("--repo", metavar="PATH", help="The repository (default: here).")
+    ] = Path(),
+    output_format: Annotated[Format, _FORMAT_OPTION] = Format.TERMINAL,
+    strict: Annotated[bool, _STRICT_OPTION] = False,
+) -> None:
+    """Does a change widen what coding agents may do? For pull requests.
+
+    Compares the agent configuration the repository commits (.claude/settings.json,
+    .mcp.json, .codex/config.toml, .gemini/settings.json, .cursor/, opencode.json,
+    .github/copilot/) between two refs, with read-only git. Exits with 3 when a ref
+    cannot be read, and with 1 under --strict when a change fails the policy.
+    """
+    from ifinjected import __version__
+    from ifinjected.diffing import DiffError, diff_findings
+    from ifinjected.models import Family, Status, utc_timestamp
+    from ifinjected.rules.engine import problem_status
+    from ifinjected.runner import SubprocessRunner
+
+    redactor = Redactor(RedactionContext.current())
+    root = repo.absolute()
+    effective = _policy_or_exit(root, redactor)
+    try:
+        found = diff_findings(SubprocessRunner(), root, base, head)
+    except DiffError as error:
+        typer.echo(f"ifinjected: {redactor.text(str(error))}", err=True)
+        raise typer.Exit(ExitCode.CONTEXT_UNAVAILABLE) from None
+    status = problem_status(effective, Family.DIFF)
+    findings = tuple(dataclasses.replace(f, status=status) for f in found)
+    snapshot = Snapshot(
+        __version__,
+        utc_timestamp(),
+        Platform.current().system.value,
+        workspace=str(root),
+        policy=effective,
+        findings=findings,
+    )
+    redacted, counts = redacted_with_counts(snapshot)
+    redacted = dataclasses.replace(redacted, redactions=counts)
+    if output_format is Format.TERMINAL:
+        if not findings:
+            typer.echo(f"No change between {base} and {head} widens what coding agents may do.")
+        for finding in redacted.findings:
+            line = (
+                f":{finding.sources[0].line}" if finding.sources and finding.sources[0].line else ""
+            )
+            typer.echo(f"{finding.status.value.upper():<5} {finding.id}  {finding.summary}{line}")
+    else:
+        typer.echo(_rendered(redacted, output_format), nl=False)
+    if strict and any(f.status is Status.FAIL for f in findings):
+        raise typer.Exit(ExitCode.STRICT_FAILURE)
+
+
 class PlanFormat(StrEnum):
     TEXT = "text"
     JSON = "json"

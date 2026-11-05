@@ -2,12 +2,20 @@
 
 from __future__ import annotations
 
+from ifinjected import diffing
 from ifinjected.rules import flow, posture, read, secret
 from ifinjected.rules.engine import Rule
 
 
 def builtin_rules() -> tuple[Rule, ...]:
-    rules = (*flow_first(), *read.registry, *posture.registry, *secret.registry, *flow_rest())
+    rules = (
+        *flow_first(),
+        *read.registry,
+        *posture.registry,
+        *secret.registry,
+        *flow_rest(),
+        *diffing.registry,
+    )
     ids = [rule.id for rule in rules]
     if len(ids) != len(set(ids)):
         raise ValueError("a rule id is registered in two modules")
