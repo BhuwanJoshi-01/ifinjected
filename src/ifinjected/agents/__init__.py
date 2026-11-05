@@ -8,6 +8,7 @@ from pathlib import Path
 from ifinjected.agents.base import AgentReport
 from ifinjected.agents.claude_code import inspect_claude_code
 from ifinjected.agents.codex import inspect_codex
+from ifinjected.agents.copilot import inspect_copilot
 from ifinjected.agents.cursor import inspect_cursor
 from ifinjected.agents.gemini import inspect_gemini
 from ifinjected.agents.opencode import inspect_opencode
@@ -22,6 +23,7 @@ ADAPTERS: dict[AgentId, Adapter] = {
     AgentId.GEMINI_CLI: inspect_gemini,
     AgentId.CURSOR: inspect_cursor,
     AgentId.OPENCODE: inspect_opencode,
+    AgentId.COPILOT_CLI: inspect_copilot,
 }
 """Adapters by agent; agents without one yet are reported as not inspected."""
 
