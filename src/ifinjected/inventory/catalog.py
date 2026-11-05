@@ -21,9 +21,14 @@ from ifinjected.homes import Platform
 
 _BASES = (
     "home", "xdg_config", "xdg_data", "appdata", "gcloud", "azure", "gh", "cargo", "docker",
-    "kubeconfig", "huggingface", "chromium", "firefox", "workspace", "workspace_parents",
+    "kubeconfig", "huggingface", "chromium", "firefox", "env_dirs", "workspace",
+    "workspace_parents",
 )  # fmt: skip
-"""Also ``env:NAME``: the path in environment variable NAME (glob ``.`` for the path itself)."""
+"""Also ``env:NAME``: the path in environment variable NAME (glob ``.`` for the path itself),
+and ``agent_role:ROLE``: every agent's user-scope location with that role."""
+
+FLAGS = ("deep", "include_env")
+"""The opt-in flags that can deepen a look: ``--deep`` and ``--include-env``."""
 
 
 class CatalogError(ValueError):
@@ -56,10 +61,14 @@ class Entry:
     sources: tuple[Source, ...]
     head_bytes: int | None = None
     deep_level: Level | None = None
-    """The level with ``--deep``; ``None`` when ``--deep`` reads nothing more."""
+    """The level with the opt-in flag; ``None`` when no flag reads anything more."""
+    deep_flag: str = "deep"
+    """The flag that unlocks :attr:`deep_level`: ``deep`` or ``include_env``."""
 
-    def level_for(self, deep: bool) -> Level:
-        return self.deep_level if deep and self.deep_level is not None else self.level
+    def level_for(self, flags: frozenset[str]) -> Level:
+        if self.deep_level is not None and self.deep_flag in flags:
+            return self.deep_level
+        return self.level
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,13 +83,20 @@ class Catalog:
         raise KeyError(item_id)
 
     def declared_level(
-        self, path: Path, platform: Platform, workspace: Path | None, *, deep: bool = False
+        self,
+        path: Path,
+        platform: Platform,
+        workspace: Path | None,
+        *,
+        deep: bool = False,
+        include_env: bool = False,
     ) -> Level | None:
         """The deepest level any entry allows for ``path``, or ``None`` if none declares it."""
         order = list(Level)
+        flags = frozenset(f for f, on in (("deep", deep), ("include_env", include_env)) if on)
         found: Level | None = None
         for entry in self.entries:
-            level = entry.level_for(deep)
+            level = entry.level_for(flags)
             for pattern in entry.paths:
                 for base in _base_dirs(pattern.base, platform, workspace):
                     if _matches(path, base, pattern.glob) and (
@@ -92,6 +108,7 @@ class Catalog:
 
 def _base_dirs(base: str, platform: Platform, workspace: Path | None) -> list[Path]:
     # Imported here: the collectors import the catalog, and these resolvers live with them.
+    from ifinjected.inventory.agent_files import agent_role_paths, env_directories
     from ifinjected.inventory.cloud import azure_dir, gcloud_dir
     from ifinjected.inventory.containers import docker_config_file, kubeconfig_files
     from ifinjected.inventory.tools import (
@@ -104,6 +121,18 @@ def _base_dirs(base: str, platform: Platform, workspace: Path | None) -> list[Pa
     if base.startswith("env:"):
         value = platform._env_path(base.removeprefix("env:"))
         return [value] if value is not None else []
+    if base.startswith("agent_role:"):
+        return [path for _, path in agent_role_paths(platform, base.removeprefix("agent_role:"))]
+    if base == "env_dirs":
+        if workspace is None:
+            return []
+        from ifinjected.files import _LEDGER
+
+        token = _LEDGER.set(None)  # resolving the catalog is not part of the scan
+        try:
+            return env_directories(platform, workspace)
+        finally:
+            _LEDGER.reset(token)
     resolvers = {
         "gcloud": lambda: [gcloud_dir(platform)],
         "azure": lambda: [azure_dir(platform)],
@@ -169,12 +198,15 @@ def parse_catalog(data: dict[str, Any]) -> Catalog:
             raise CatalogError(f"{item['id']} cites unknown sources {unknown}")
         level = Level(item["level"])
         deep_level = Level(item["deep_level"]) if "deep_level" in item else None
+        deep_flag = item.get("deep_flag", "deep")
+        if deep_flag not in FLAGS:
+            raise CatalogError(f"{item['id']}: unknown deep_flag {deep_flag}")
         head_bytes = item.get("head_bytes")
         if (level is Level.HEAD) != (head_bytes is not None):
             raise CatalogError(f"{item['id']}: head_bytes is required for head and only for head")
         patterns = tuple(PathPattern(p["base"], p["glob"]) for p in item["paths"])
         for pattern in patterns:
-            if pattern.base not in _BASES and not pattern.base.startswith("env:"):
+            if pattern.base not in _BASES and not pattern.base.startswith(("env:", "agent_role:")):
                 raise CatalogError(f"{item['id']}: unknown base {pattern.base}")
         entries.append(
             Entry(
@@ -186,6 +218,7 @@ def parse_catalog(data: dict[str, Any]) -> Catalog:
                 sources=tuple(sources[s] for s in item["sources"]),
                 head_bytes=head_bytes,
                 deep_level=deep_level,
+                deep_flag=deep_flag,
             )
         )
     return Catalog(retrieved=data["retrieved"], entries=tuple(entries))

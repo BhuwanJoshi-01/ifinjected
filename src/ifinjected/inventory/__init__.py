@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from ifinjected.inventory.agent_files import collect_agent_files
 from ifinjected.inventory.base import Collected, Context
 from ifinjected.inventory.cloud import collect_cloud
 from ifinjected.inventory.containers import collect_containers
@@ -19,6 +20,7 @@ COLLECTORS: tuple[Collector, ...] = (
     collect_vcs,
     collect_containers,
     collect_tools,
+    collect_agent_files,
 )
 """Every collector, in report order."""
 
