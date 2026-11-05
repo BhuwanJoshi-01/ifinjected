@@ -155,6 +155,17 @@ def stat_entry(path: Path) -> Entry:
     )
 
 
+def list_directory(path: Path) -> list[str] | None:
+    """The names in directory ``path``, sorted; ``None`` when it is not a readable
+    directory. Only names are returned: nothing inside is opened or even ``stat``ed."""
+    _record(path, Level.STAT)
+    try:
+        with os.scandir(path) as entries:
+            return sorted(entry.name for entry in entries)
+    except OSError:
+        return None
+
+
 def _open_regular(path: Path, flags: int = _FLAGS) -> int:
     """A file descriptor for the regular file at ``path``, or :class:`RefusedError`."""
     try:

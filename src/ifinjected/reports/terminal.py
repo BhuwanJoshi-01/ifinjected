@@ -10,7 +10,35 @@ from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
-from ifinjected.models import DEFAULT_LEVELS, Family, Policy
+from ifinjected.models import DEFAULT_LEVELS, Family, Policy, SensitiveItem, Severity, Snapshot
+
+_REDACTION_NAMES = {
+    "home_path": ("home path", "home paths"),
+    "user_name": ("user name", "user names"),
+    "host_name": ("host name", "host names"),
+    "secret_value": ("secret value", "secret values"),
+    "url_credentials": ("URL credential", "URL credentials"),
+    "token": ("token", "tokens"),
+    "private_key": ("private key", "private keys"),
+}
+
+_SEVERITY_STYLE = {
+    Severity.HIGH: "bold red",
+    Severity.MEDIUM: "yellow",
+    Severity.LOW: "cyan",
+    Severity.INFO: "dim",
+}
+
+
+def redaction_line(snapshot: Snapshot) -> str | None:
+    """'Redacted from this output: 3 home paths, 1 token', or None if nothing was."""
+    if not snapshot.redactions:
+        return None
+    parts = []
+    for item in snapshot.redactions:
+        singular, plural = _REDACTION_NAMES.get(item.kind, (item.kind, item.kind))
+        parts.append(f"{item.count} {singular if item.count == 1 else plural}")
+    return "Redacted from this output: " + ", ".join(parts)
 
 
 def display_path(path: str) -> str:
@@ -79,3 +107,50 @@ def render_policy(policy: Policy, workspace: str, console: Console) -> None:
             style="dim",
         )
     )
+
+
+def _item_detail(item: SensitiveItem) -> str:
+    """The facts of an item worth a column: key type and fingerprint, profiles, hosts."""
+    parts = []
+    for key in ("key_type", "fingerprint"):
+        value = item.fact(key)
+        if value:
+            parts.append(value)
+    if item.readable_by_others:
+        parts.append("readable by other users")
+    return "  ".join(parts)
+
+
+def render_inventory(snapshot: Snapshot, console: Console) -> None:
+    """The sensitive items on this machine, most severe first, grouped by kind."""
+    console.print(Text("Sensitive items on this machine", style="bold"))
+    console.print(
+        Text("Found by name and file header only: no credential value was read.", style="dim")
+    )
+    console.print()
+    if not snapshot.items:
+        console.print(Text("None of the known kinds of credentials were found."))
+    else:
+        order = list(Severity)[::-1]
+        items = sorted(snapshot.items, key=lambda i: (order.index(i.severity), i.id, i.path))
+        table = Table(box=None, show_edge=False, pad_edge=False, header_style="bold")
+        table.add_column("Risk", no_wrap=True)
+        table.add_column("What", no_wrap=True)
+        table.add_column("Where", overflow="fold")
+        table.add_column("Details", overflow="fold", style="dim")
+        for item in items:
+            table.add_row(
+                Text(item.severity.value.upper(), style=_SEVERITY_STYLE[item.severity]),
+                Text(item.title),
+                Text(display_path(item.path)),
+                Text(_item_detail(item)),
+            )
+        console.print(table)
+    for skipped in snapshot.skipped:
+        console.print(
+            Text(f"Not read: {display_path(skipped.path)} {skipped.reason}", style="yellow")
+        )
+    line = redaction_line(snapshot)
+    if line:
+        console.print()
+        console.print(Text(line, style="dim"))

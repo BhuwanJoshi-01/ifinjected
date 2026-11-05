@@ -294,6 +294,36 @@ class Policy:
 
 
 @dataclass(frozen=True, slots=True)
+class SensitiveItem:
+    """Something on this machine that an agent must not be able to read or use.
+
+    ``id`` is the catalog entry (``ssh.key``), ``path`` where it is and ``facts`` what
+    was learned about it without reading its value (``protection: none``, a public key
+    fingerprint, profile names with ``--deep``). ``readable_by_others`` is ``None`` where
+    permission bits mean nothing (Windows).
+    """
+
+    id: str
+    title: str
+    path: str
+    severity: Severity
+    facts: tuple[Evidence, ...] = ()
+    readable_by_others: bool | None = None
+
+    def fact(self, key: str) -> str | None:
+        return next((f.value for f in self.facts if f.key == key), None)
+
+
+@dataclass(frozen=True, slots=True)
+class SkippedFile:
+    """A file that was found but not read, and why (too large, not a regular file, not
+    UTF-8, permission denied). A skipped file can hide an exposure."""
+
+    path: str
+    reason: str
+
+
+@dataclass(frozen=True, slots=True)
 class RedactionCount:
     """How many values of one kind (``home_path``, ``secret_value``…) were redacted."""
 
@@ -304,3 +334,25 @@ class RedactionCount:
 def utc_timestamp() -> str:
     """Current time as an ISO 8601 UTC string with second precision."""
     return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+@dataclass(frozen=True, slots=True)
+class Snapshot:
+    """Everything one run observed and concluded; the input of every renderer.
+
+    ``system`` is ``linux``, ``macos`` or ``windows``; ``workspace`` the project directory
+    the run looked at, if any. ``items`` are the sensitive items found on the machine,
+    ``skipped`` the files that could not be read.
+    """
+
+    tool_version: str
+    created_at: str
+    system: str
+    schema_version: int = SCHEMA_VERSION
+    workspace: str | None = None
+    policy: Policy | None = None
+    items: tuple[SensitiveItem, ...] = ()
+    skipped: tuple[SkippedFile, ...] = ()
+    probe_failures: tuple[ProbeFailure, ...] = ()
+    findings: tuple[Finding, ...] = ()
+    redactions: tuple[RedactionCount, ...] = ()
