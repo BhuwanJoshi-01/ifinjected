@@ -56,9 +56,14 @@ def _directories(snapshot: Snapshot, agent: AgentId, home: str | None) -> list[t
 
 
 def _tilde(path: str, home: str | None) -> str:
-    if home and (path == home or path.startswith(home.rstrip("/\\") + "/")):
-        return "~" + path[len(home.rstrip("/\\")) :]
-    return path
+    """``~/.ssh`` for a path under home, with forward slashes as the agents write them."""
+    if home is None:
+        return path
+    try:
+        relative = PurePath(path).relative_to(home)
+    except ValueError:
+        return path
+    return "~" if not relative.parts else "~/" + relative.as_posix()
 
 
 def _env_reachable(snapshot: Snapshot, agent: AgentId) -> bool:
