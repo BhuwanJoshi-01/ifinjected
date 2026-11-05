@@ -54,6 +54,7 @@ ifinjected inventory                 # the credentials on this machine (location
 ifinjected plan                      # the config change that closes each agent's exposures (never applied)
 ifinjected explain IFJ-READ-003      # what a finding means, and its sources
 ifinjected card -o card.svg          # a share card: grades and counts, nothing that identifies you
+ifinjected prove --run               # open (never read) each credential under Codex's own sandbox
 ifinjected scan --strict -f sarif    # for CI: exit 1 on a failing finding, SARIF for code scanning
 ```
 
@@ -108,7 +109,7 @@ that widened it. Locally: `ifinjected diff --base origin/main`.
 And on the machine: SSH keys (passphrase or not, from the key header), AWS, Google Cloud and Azure credentials,
 GitHub CLI, git, netrc, npm, PyPI, Cargo, Docker and Kubernetes credentials, service tokens, the agents' own login
 tokens and transcripts, `.env` files, browser cookie databases, password managers, secret-looking environment
-variable names, and credential sockets (ssh-agent, a writable Docker socket). 38 rules, each with a stable code
+variable names, and credential sockets (ssh-agent, a writable Docker socket). 47 rules, each with a stable code
 ([all of them](docs/rules.md)). How grades are decided: [docs/grading.md](docs/grading.md).
 
 ## What it promises
@@ -119,7 +120,9 @@ variable names, and credential sockets (ssh-agent, a writable Docker socket). 38
 - **Never runs what an agent is configured to run**: no MCP server, hook or helper is started.
 - **Reads only what [docs/what-is-read.md](docs/what-is-read.md) declares.** A test records every file access during
   whole scans and fails on anything undeclared.
-- **Writes nothing** except a file you name with `--output`, and uses no network.
+- **Writes nothing** except a file you name with `--output`, and uses no network. The only process it starts
+  outside `diff` (read-only git) is the `prove --run` probe, which calls `open()` and `close()` and never `read()`; a
+  test parses the probe and fails on any other call.
 
 `ifinjected` describes what an agent's configuration allows; it is not a sandbox and does not stop anything. A
 clean report is not a guarantee: agents change, and not everything they can do is in their configuration.
