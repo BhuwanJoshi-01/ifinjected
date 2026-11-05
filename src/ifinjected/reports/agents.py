@@ -11,6 +11,7 @@ from ifinjected.models import Reach, SensitiveItem, Snapshot, SourceRef
 from ifinjected.policy.exposure import Exposure
 from ifinjected.policy.model import Channel, ChannelPolicy, Gate
 from ifinjected.reports.terminal import display_path, redaction_line
+from ifinjected.trifecta.classify import classify
 
 _GATE_TEXT = {
     Gate.NONE: "no approval",
@@ -105,6 +106,16 @@ def render_agent(report: AgentReport, console: Console) -> None:
             line = Text(
                 f"    {server.name:<20} {server.scope.value:<8} {server.transport:<6} {what}"
             )
+            classification = classify(server)
+            if classification.known:
+                caps = ", ".join(
+                    sorted(c.value.replace("_", " ") for c in classification.capabilities)
+                )
+                line.append(f"  [{caps or 'no outside access'}]", style="yellow" if caps else "dim")
+            elif classification.local:
+                line.append("  [unknown server, runs with your full access]", style="yellow")
+            else:
+                line.append("  [unknown remote server]", style="dim")
             if server.env_names:
                 line.append(f"  env: {', '.join(server.env_names)}", style="dim")
             if server.approved is None:
