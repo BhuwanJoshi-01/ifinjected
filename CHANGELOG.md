@@ -21,7 +21,13 @@ The first release candidate.
 - `ifinjected agents`, `plan`, `explain`, `rules`, `policy`, `report`, `card`,
   `share` and `badge`.
 - 47 rules with stable codes (docs/rules.md, generated), a workspace policy
-  (`.ifinjected.toml`), and docs/what-is-read.md generated from the catalog.
+  (`.ifinjected.toml`), and docs/what-is-read.md and docs/cli.md generated from
+  the catalog and the command line.
+- `ifinjected diff --base REF`: does a change widen what coding agents may do in
+  this repository? Six DIFF rules, each pointing at the changed line, and SARIF
+  for code scanning.
+- A GitHub Action (`uses: BhuwanJoshi-01/ifinjected@v0.1.0`) that runs `diff` on
+  pull requests, fails the step under the repository's policy and writes SARIF.
 - `ifinjected prove --run [--network]`: an open-only probe run directly and under
   `codex sandbox`, turning Codex's claimed reach into proven or contradicted
   (IFJ-PROVE-001 to 003).

@@ -42,5 +42,8 @@ JSON output follows `its schema_version`, finding IDs keep their meaning and are
 
 ## The GitHub Action
 
-The GitHub Action (`action.yml` at the repository root) comes with the CI diff mode. Until it lands, CI jobs can run
-`uvx ifinjected scan --strict --format sarif` and upload the result with `github/codeql-action/upload-sarif`.
+The Action (`action.yml` at the repository root) is versioned by the same tags: `uses:
+BhuwanJoshi-01/ifinjected@vX.Y.Z` runs the code of that tag, installed from the action's own checkout. To list
+it on the GitHub Marketplace, tick *Publish this Action to the GitHub Marketplace* when creating the release in the
+browser (the first time, GitHub asks the maintainer to accept the Marketplace agreement). The `Action` workflow
+runs the action on a widening and a quiet change for every pull request, so a release never ships a broken one.

@@ -60,7 +60,8 @@ ifinjected scan --strict -f sarif    # for CI: exit 1 on a failing finding, SARI
 
 `--deep` parses credential files for their structure (profile and host names, never values) and `--include-env`
 lists the variable names in `.env` files. A [`.ifinjected.toml`](docs/policy.md) sets which findings fail
-`--strict` and which risks you accept. Try it on a fake machine first:
+`--strict` and which risks you accept; every command and option is in [docs/cli.md](docs/cli.md). Try it on a fake
+machine first:
 
 ```bash
 uv run python examples/messy-laptop/build.py /tmp/messy

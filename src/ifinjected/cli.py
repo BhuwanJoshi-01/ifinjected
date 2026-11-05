@@ -167,7 +167,7 @@ class ReportFormat(StrEnum):
     SARIF = "sarif"
 
 
-_FORMAT_OPTION = typer.Option("--format", "-f", help="terminal, json, markdown or sarif.")
+_FORMAT_OPTION = typer.Option("--format", "-f", help="The output format.")
 _STRICT_OPTION = typer.Option("--strict", help="Exit with 1 when a finding fails under the policy.")
 _ALL_OPTION = typer.Option("--all", help="List every warning instead of folding them per rule.")
 
