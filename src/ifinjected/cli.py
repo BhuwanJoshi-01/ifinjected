@@ -297,6 +297,65 @@ def plan(
     typer.echo(Redactor(RedactionContext.current()).text(text), nl=False)
 
 
+def _write_or_print(text: str, output: Path | None, force: bool) -> None:
+    if output is None or str(output) == "-":
+        typer.echo(text, nl=False)
+        return
+    if output.exists() and not force:
+        typer.echo(f"ifinjected: {output} exists; use --force to overwrite it", err=True)
+        raise typer.Exit(ExitCode.ERROR)
+    output.write_text(text, encoding="utf-8")
+    typer.echo(f"Wrote {output}")
+
+
+_OUTPUT_OPTION = typer.Option(
+    "--output", "-o", metavar="FILE", help="Write here instead of printing."
+)
+_FORCE_OPTION = typer.Option("--force", help="Overwrite an existing file.")
+
+
+@app.command()
+def card(
+    output: Annotated[Path | None, _OUTPUT_OPTION] = None,
+    workspace: Annotated[Path, _WORKSPACE_OPTION] = Path(),
+    share_detail: Annotated[
+        bool,
+        typer.Option("--share-detail", help="Also name the kinds of exposed items (no paths)."),
+    ] = False,
+    force: Annotated[bool, _FORCE_OPTION] = False,
+) -> None:
+    """A share card (SVG, 1200x630): your grade per agent and counts, nothing else.
+
+    No path, user name, host name, secret name or server name is on it.
+    """
+    from ifinjected.reports.card import render_card
+
+    _, redacted = _diagnosed(workspace, deep=False, include_env=False, agent=None)
+    _write_or_print(render_card(redacted, detail=share_detail), output, force)
+
+
+@app.command()
+def share(workspace: Annotated[Path, _WORKSPACE_OPTION] = Path()) -> None:
+    """One line to post with your card: the grades, and how to check yours."""
+    from ifinjected.reports.card import render_share_text
+
+    _, redacted = _diagnosed(workspace, deep=False, include_env=False, agent=None)
+    typer.echo(render_share_text(redacted), nl=False)
+
+
+@app.command()
+def badge(
+    output: Annotated[Path | None, _OUTPUT_OPTION] = None,
+    workspace: Annotated[Path, _WORKSPACE_OPTION] = Path(),
+    force: Annotated[bool, _FORCE_OPTION] = False,
+) -> None:
+    """A small README badge (SVG) with the grade."""
+    from ifinjected.reports.card import render_badge
+
+    _, redacted = _diagnosed(workspace, deep=False, include_env=False, agent=None)
+    _write_or_print(render_badge(redacted), output, force)
+
+
 @app.command()
 def explain(
     code: Annotated[str, typer.Argument(metavar="CODE", help="A finding code, e.g. IFJ-READ-003.")],
