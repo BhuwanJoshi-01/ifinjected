@@ -5,6 +5,7 @@ No diagnosis logic lives here; commands call adapters, the inventory, rules and 
 
 from __future__ import annotations
 
+import dataclasses
 import os
 import sys
 from pathlib import Path
@@ -14,10 +15,13 @@ import typer
 from rich.console import Console
 
 from ifinjected import __version__
-from ifinjected.config import PolicyError, load_policy
+from ifinjected.config import PolicyError, apply_overrides, load_policy
 from ifinjected.exit_codes import ExitCode
-from ifinjected.privacy import RedactionContext, Redactor
-from ifinjected.reports.terminal import render_policy
+from ifinjected.homes import Platform
+from ifinjected.models import Policy
+from ifinjected.orchestrator import inspect_inventory
+from ifinjected.privacy import RedactionContext, Redactor, redacted_with_counts
+from ifinjected.reports.terminal import render_inventory, render_policy
 
 HELP = (
     "What could a prompt-injected coding agent reach on this machine? For Claude Code, "
@@ -72,16 +76,53 @@ def policy(workspace: Annotated[Path, _WORKSPACE_OPTION] = Path()) -> None:
     key at fault and exits with code 2.
     """
     redactor = Redactor(RedactionContext.current())
-    try:
-        effective = load_policy(workspace.absolute())
-    except PolicyError as error:
-        typer.echo(f"ifinjected: {redactor.text(str(error))}", err=True)
-        raise typer.Exit(ExitCode.ERROR) from None
+    effective = _policy_or_exit(workspace.absolute(), redactor)
     render_policy(
         redactor.redact(effective),
         redactor.text(str(workspace.absolute())),
         Console(highlight=False),
     )
+
+
+_DEEP_OPTION = typer.Option(
+    "--deep",
+    help="Also parse credential files for their structure (profile and host names); "
+    "values are dropped while parsing and never shown.",
+)
+_ENV_OPTION = typer.Option(
+    "--include-env", help="List the variable names in .env files (never their values)."
+)
+
+
+def _policy_or_exit(workspace: Path, redactor: Redactor) -> Policy:
+    try:
+        return load_policy(workspace)
+    except PolicyError as error:
+        typer.echo(f"ifinjected: {redactor.text(str(error))}", err=True)
+        raise typer.Exit(ExitCode.ERROR) from None
+
+
+@app.command()
+def inventory(
+    workspace: Annotated[Path, _WORKSPACE_OPTION] = Path(),
+    deep: Annotated[bool, _DEEP_OPTION] = False,
+    include_env: Annotated[bool, _ENV_OPTION] = False,
+) -> None:
+    """List the credentials and other sensitive items that exist on this machine.
+
+    Found by location, permissions and file header only: a credential's value is never
+    read, kept or shown. This is what any agent running as you could start from.
+    """
+    redactor = Redactor(RedactionContext.current())
+    root = workspace.absolute()
+    effective = apply_overrides(
+        _policy_or_exit(root, redactor),
+        deep=True if deep else None,
+        include_env=True if include_env else None,
+    )
+    snapshot = inspect_inventory(Platform.current(), effective, root)
+    redacted, counts = redacted_with_counts(snapshot)
+    render_inventory(dataclasses.replace(redacted, redactions=counts), Console(highlight=False))
 
 
 def main() -> None:
