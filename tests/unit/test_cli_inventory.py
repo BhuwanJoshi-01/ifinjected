@@ -41,7 +41,7 @@ def test_keys_are_listed_redacted_and_without_any_secret(
     assert run_main(monkeypatch, "inventory", "--workspace", str(machine.workspace)) == 0
     out = capsys.readouterr().out
     assert "SSH private key (no passphrase)" in out
-    assert "~/.ssh/id_ed25519" in out
+    assert str(Path("~", ".ssh", "id_ed25519")) in " ".join(out.split())
     assert "HIGH" in out
     assert canaries.MARK not in out
     assert str(machine.home) not in out
