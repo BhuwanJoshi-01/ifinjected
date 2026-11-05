@@ -94,6 +94,8 @@ def _through_shell(
 def exposure_of(policy: EffectivePolicy, item: SensitiveItem) -> Exposure:
     agent = policy.agent
     if item.path == ENVIRONMENT:
+        if policy.inherits_secret_env is False:
+            return Exposure(agent, item.id, item.path, Reach.BLOCKED_BY_RULE)
         return _through_shell(policy, agent, item, _SHELLS)
     if item.id in _SOCKETS:
         return _through_shell(policy, agent, item, (Channel.SHELL_ARBITRARY,))

@@ -152,6 +152,10 @@
     "claude-sandboxing": {
       "title": "Claude Code: sandboxing, platforms and dependencies (bubblewrap on Linux)",
       "url": "https://code.claude.com/docs/en/sandboxing"
+    },
+    "codex-config": {
+      "title": "Codex: configuration reference (profile files next to config.toml)",
+      "url": "https://learn.chatgpt.com/docs/config-file/config-reference"
     }
   },
   "items": [
@@ -769,10 +773,15 @@
         {
           "base": "agent_config_dir",
           "glob": "*.json"
+        },
+        {
+          "base": "agent_config_dir",
+          "glob": "*.config.toml"
         }
       ],
       "sources": [
-        "claude-settings"
+        "claude-settings",
+        "codex-config"
       ]
     },
     {

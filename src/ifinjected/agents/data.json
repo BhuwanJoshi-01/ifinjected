@@ -20,6 +20,18 @@
     "claude-hooks": {
       "title": "Claude Code: Hooks",
       "url": "https://code.claude.com/docs/en/hooks"
+    },
+    "codex-config": {
+      "title": "Codex: configuration reference",
+      "url": "https://learn.chatgpt.com/docs/config-file/config-reference"
+    },
+    "codex-sandboxing": {
+      "title": "Codex: sandboxing and approvals",
+      "url": "https://learn.chatgpt.com/docs/sandboxing"
+    },
+    "codex-permissions-source": {
+      "title": "openai/codex: codex-rs/protocol/src/permissions.rs (read-only and workspace-write policies start from :root = Read)",
+      "url": "https://github.com/openai/codex/blob/main/codex-rs/protocol/src/permissions.rs"
     }
   },
   "facts": {
@@ -86,6 +98,38 @@
     "claude.mcp_scopes": {
       "text": "MCP servers come from ~/.claude.json (user and local scope), the project's .mcp.json (approved per server or with enableAllProjectMcpServers) and managed-mcp.json.",
       "source": "claude-mcp"
+    },
+    "codex.modes": {
+      "text": "sandbox_mode is read-only, workspace-write or danger-full-access; workspace-write is the default low-friction mode for local work.",
+      "source": "codex-sandboxing"
+    },
+    "codex.approvals": {
+      "text": "approval_policy is on-request (work inside the sandbox, ask to go beyond it) or never; untrusted is unsupported and on-failure deprecated.",
+      "source": "codex-config"
+    },
+    "codex.reads": {
+      "text": "The read-only and workspace-write policies start from read access to the filesystem root: sandboxed commands can read the whole disk unless a permissions profile denies paths.",
+      "source": "codex-permissions-source"
+    },
+    "codex.network": {
+      "text": "sandbox_workspace_write.network_access allows outbound network access inside the workspace-write sandbox.",
+      "source": "codex-config"
+    },
+    "codex.env": {
+      "text": "shell_environment_policy.ignore_default_excludes keeps variables containing KEY, SECRET or TOKEN (default: true); set to false to exclude them.",
+      "source": "codex-config"
+    },
+    "codex.deny": {
+      "text": "A [permissions.<name>] profile can deny reads of paths and globs such as **/*.env with \"deny\".",
+      "source": "codex-config"
+    },
+    "codex.trust": {
+      "text": "A project-local .codex/config.toml applies only to trusted projects (projects.<path>.trust_level).",
+      "source": "codex-config"
+    },
+    "codex.platforms": {
+      "text": "macOS uses Seatbelt, Linux and WSL2 need bubblewrap, native Windows has its own sandbox in PowerShell.",
+      "source": "codex-sandboxing"
     }
   }
 }

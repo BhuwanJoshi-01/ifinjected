@@ -117,6 +117,9 @@ class SandboxPolicy:
     allowed_domains: tuple[str, ...] = ()
     escape_hatches: tuple[str, ...] = ()
     source: SourceRef | None = None
+    unlisted_hosts: Gate = Gate.HUMAN
+    """What happens when a sandboxed command connects to a host the sandbox does not
+    allow: Claude Code's proxy asks (in Manual mode), Codex's sandbox refuses."""
 
     @property
     def effective(self) -> bool:
@@ -143,3 +146,5 @@ class EffectivePolicy:
     web_search: Gate | None = None
     mcp_gates: tuple[tuple[str, Gate], ...] = ()
     """Every enabled MCP server by name, with the gate in front of its tools."""
+    inherits_secret_env: bool | None = True
+    """Whether commands inherit variables with secret-looking names (Codex can strip them)."""
