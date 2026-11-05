@@ -1,0 +1,18 @@
+# Every key of .ifinjected.toml, each set away from its default.
+schema_version = 1
+
+[scan]
+agents = ["claude_code", "codex"]
+deep = true
+include_env = true
+max_file_bytes = 65536
+
+[policy]
+secret = "deny"
+read = "warn"
+mcp = "allow"
+
+[accept]
+items = ["ssh.key", "gh.hosts"]
+mcp_servers = ["github", "context7"]
+hosts = ["github.com", "*.pypi.org"]

@@ -7,13 +7,17 @@ from __future__ import annotations
 
 import os
 import sys
+from pathlib import Path
 from typing import Annotated
 
 import typer
+from rich.console import Console
 
 from ifinjected import __version__
+from ifinjected.config import PolicyError, load_policy
 from ifinjected.exit_codes import ExitCode
 from ifinjected.privacy import RedactionContext, Redactor
+from ifinjected.reports.terminal import render_policy
 
 HELP = (
     "What could a prompt-injected coding agent reach on this machine? For Claude Code, "
@@ -50,6 +54,34 @@ def cli(
     ] = False,
 ) -> None:
     """Global options (the help text comes from HELP)."""
+
+
+_WORKSPACE_OPTION = typer.Option(
+    "--workspace",
+    metavar="PATH",
+    help="The project the agents work in; its .ifinjected.toml and project settings are read "
+    "(default: here).",
+)
+
+
+@app.command()
+def policy(workspace: Annotated[Path, _WORKSPACE_OPTION] = Path()) -> None:
+    """Show the policy that applies: .ifinjected.toml in the workspace, or the defaults.
+
+    The file is read as data, never run. A file that cannot be used is reported with the
+    key at fault and exits with code 2.
+    """
+    redactor = Redactor(RedactionContext.current())
+    try:
+        effective = load_policy(workspace.absolute())
+    except PolicyError as error:
+        typer.echo(f"ifinjected: {redactor.text(str(error))}", err=True)
+        raise typer.Exit(ExitCode.ERROR) from None
+    render_policy(
+        redactor.redact(effective),
+        redactor.text(str(workspace.absolute())),
+        Console(highlight=False),
+    )
 
 
 def main() -> None:
