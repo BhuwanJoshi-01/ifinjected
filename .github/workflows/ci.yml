@@ -99,3 +99,23 @@ jobs:
       - uses: actions/dependency-review-action@v5
         with:
           fail-on-severity: moderate
+
+  sarif:
+    # The SARIF report of a fake machine is validated against the official schema,
+    # fetched from the OASIS repository at a pinned commit and checksummed.
+    runs-on: ubuntu-latest
+    env:
+      SCHEMA_URL: https://raw.githubusercontent.com/oasis-tcs/sarif-spec/a560296ca8c921f3bdb8d4a8db57ab83dae968a7/sarif-2.1/schema/sarif-schema-2.1.0.json
+      SCHEMA_SHA256: c3b4bb2d6093897483348925aaa73af03b3e3f4bd4ca38cef26dcb4212a2682e
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      - run: uv sync --locked
+      - name: Write a SARIF report of this runner
+        run: uv run ifinjected report --format sarif --output "$RUNNER_TEMP/scan.sarif"
+      - name: Fetch the SARIF 2.1.0 schema
+        run: |
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/sarif-schema.json" "$SCHEMA_URL"
+          echo "$SCHEMA_SHA256  $RUNNER_TEMP/sarif-schema.json" | sha256sum -c -
+      - name: Validate
+        run: uv run python scripts/check_sarif.py "$RUNNER_TEMP/sarif-schema.json" "$RUNNER_TEMP/scan.sarif"
