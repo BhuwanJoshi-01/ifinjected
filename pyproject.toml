@@ -1,6 +1,6 @@
 [project]
 name = "ifinjected"
-version = "0.1.0.dev0"
+version = "0.1.0"
 description = "What could a prompt-injected coding agent reach on your machine? Read-only, offline, never prints a secret."
 readme = "README.md"
 license = "MIT"

@@ -7,7 +7,9 @@ and agents depend on both.
 
 ## Unreleased
 
-The first release candidate.
+## 0.1.0 (2026-11-05)
+
+The first release.
 
 - `ifinjected` (or `ifinjected scan`): a grade per agent from its lethal trifecta,
   then the findings with their reason, line and fix. `--strict` exits 1 on a failing
@@ -31,5 +33,7 @@ The first release candidate.
 - `ifinjected prove --run [--network]`: an open-only probe run directly and under
   `codex sandbox`, turning Codex's claimed reach into proven or contradicted
   (IFJ-PROVE-001 to 003).
+- A project page, <https://bhuwanjoshi-01.github.io/ifinjected/>, whose example
+  listing is generated from the tool's own output.
 - Privacy contracts: a read ledger checked against the catalog, and canary secrets
   that must reach no output.
