@@ -60,10 +60,12 @@ jobs:
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
       - name: Build the sdist and wheel
         run: uv build
-      - name: The wheel carries the catalog of sensitive items
+      - name: The wheel carries its data files
         run: |
           wheel=$(ls dist/*.whl)
-          python -m zipfile -l "$wheel" | grep -q "ifinjected/inventory/catalog.json" || { echo "::error::catalog.json missing from $wheel"; exit 1; }
+          for data in inventory/catalog.json agents/data.json trifecta/mcp_catalog.json; do
+            python -m zipfile -l "$wheel" | grep -q "ifinjected/$data" || { echo "::error::$data missing from $wheel"; exit 1; }
+          done
       - name: Install the wheel into a fresh environment
         run: |
           uv venv "$RUNNER_TEMP/fresh" --python 3.12
