@@ -6,6 +6,10 @@ import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ifinjected.agents.base import AgentReport
 
 SCHEMA_VERSION = 1
 """Version of the snapshot/JSON report layout; bumped only for incompatible changes."""
@@ -353,6 +357,7 @@ class Snapshot:
     policy: Policy | None = None
     items: tuple[SensitiveItem, ...] = ()
     skipped: tuple[SkippedFile, ...] = ()
+    agents: tuple[AgentReport, ...] = ()
     probe_failures: tuple[ProbeFailure, ...] = ()
     findings: tuple[Finding, ...] = ()
     redactions: tuple[RedactionCount, ...] = ()

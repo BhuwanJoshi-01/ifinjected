@@ -31,6 +31,8 @@ from ifinjected.policy.patterns import inside, matches
         ("/home/[!ab]/x", "/home/b/x", False),
         ("/home/a/[x", "/home/a/[x", True),  # an unclosed set is a literal
         ("/**", "/anything/at/all", True),
+        ("**", "/anything/at/all", True),
+        ("**", "C:\\Users\\a\\x", True),
         ("/home/a", "/home/A", False),  # case-sensitive on POSIX
         ("C:\\Users\\a\\.ssh\\**", "c:\\users\\A\\.ssh\\id_rsa", True),  # not on Windows
         ("C:\\Users\\a\\.ssh", "D:\\Users\\a\\.ssh\\x", False),
