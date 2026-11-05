@@ -150,6 +150,30 @@ def agents(
     render_agents(dataclasses.replace(redacted, redactions=counts), Console(highlight=False))
 
 
+@app.command()
+def explain(
+    code: Annotated[str, typer.Argument(metavar="CODE", help="A finding code, e.g. IFJ-READ-003.")],
+) -> None:
+    """Explain a finding: what it means, why it matters, and its sources."""
+    from ifinjected.rules.catalog import rule_by_id
+    from ifinjected.rules.docs import explain as explanation
+
+    rule = rule_by_id(code)
+    if rule is None:
+        typer.echo(f"ifinjected: unknown finding code {code}; see ifinjected rules", err=True)
+        raise typer.Exit(ExitCode.ERROR)
+    typer.echo(explanation(rule), nl=False)
+
+
+@app.command()
+def rules() -> None:
+    """List every rule with its code and title."""
+    from ifinjected.rules.catalog import builtin_rules
+
+    for rule in builtin_rules():
+        typer.echo(f"{rule.id:<18} {rule.title}")
+
+
 def main() -> None:
     """Console entry point.
 
