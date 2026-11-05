@@ -75,6 +75,9 @@ jobs:
           "$bin/ifinjected" --help > /dev/null
           "$bin/python" -m ifinjected --version
           "$bin/ifinjected" inventory > /dev/null
+          "$bin/ifinjected" agents > /dev/null
+          "$bin/ifinjected" > /dev/null
+          "$bin/ifinjected" explain IFJ-READ-003 > /dev/null
 
   audit:
     # Known vulnerabilities in the runtime dependencies (not the dev tools).

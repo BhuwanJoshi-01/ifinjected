@@ -35,7 +35,7 @@ HELP = (
 app = typer.Typer(
     name="ifinjected",
     help=HELP,
-    no_args_is_help=True,
+    invoke_without_command=True,
     add_completion=False,
     # Rich tracebacks print local variables, which can hold environment values.
     pretty_exceptions_enable=False,
@@ -51,6 +51,7 @@ def _show_version(value: bool) -> None:
 
 @app.callback()
 def cli(
+    ctx: typer.Context,
     version: Annotated[
         bool,
         typer.Option(
@@ -58,7 +59,9 @@ def cli(
         ),
     ] = False,
 ) -> None:
-    """Global options (the help text comes from HELP)."""
+    """Global options (the help text comes from HELP). Without a command: scan."""
+    if ctx.invoked_subcommand is None:
+        _scan(Path(), strict=False, show_all=False, deep=False, include_env=False, agent=None)
 
 
 _WORKSPACE_OPTION = typer.Option(
@@ -148,6 +151,62 @@ def agents(
     snapshot = inspect_all(Platform.current(), effective, root)
     redacted, counts = redacted_with_counts(snapshot)
     render_agents(dataclasses.replace(redacted, redactions=counts), Console(highlight=False))
+
+
+_STRICT_OPTION = typer.Option("--strict", help="Exit with 1 when a finding fails under the policy.")
+_ALL_OPTION = typer.Option("--all", help="List every warning instead of folding them per rule.")
+
+
+def _scan(
+    workspace: Path,
+    *,
+    strict: bool,
+    show_all: bool,
+    deep: bool,
+    include_env: bool,
+    agent: list[AgentId] | None,
+) -> None:
+    from ifinjected.models import Status
+    from ifinjected.orchestrator import diagnose
+    from ifinjected.reports.scan import render_scan
+
+    redactor = Redactor(RedactionContext.current())
+    root = workspace.absolute()
+    effective = apply_overrides(
+        _policy_or_exit(root, redactor),
+        agents=tuple(agent or ()),
+        deep=True if deep else None,
+        include_env=True if include_env else None,
+    )
+    snapshot = diagnose(inspect_all(Platform.current(), effective, root))
+    redacted, counts = redacted_with_counts(snapshot)
+    render_scan(
+        dataclasses.replace(redacted, redactions=counts),
+        Console(highlight=False),
+        show_all=show_all,
+    )
+    if strict and any(f.status is Status.FAIL for f in snapshot.findings):
+        raise typer.Exit(ExitCode.STRICT_FAILURE)
+
+
+@app.command()
+def scan(
+    workspace: Annotated[Path, _WORKSPACE_OPTION] = Path(),
+    strict: Annotated[bool, _STRICT_OPTION] = False,
+    show_all: Annotated[bool, _ALL_OPTION] = False,
+    deep: Annotated[bool, _DEEP_OPTION] = False,
+    include_env: Annotated[bool, _ENV_OPTION] = False,
+    agent: Annotated[list[AgentId] | None, _AGENT_OPTION] = None,
+) -> None:
+    """What could a prompt-injected agent reach here? A grade per agent, then the fixes.
+
+    Read-only and offline: configuration is read as data, credentials are found by
+    location and header only, nothing is run, written or sent. Exits with 1 under
+    --strict when a finding fails the policy in .ifinjected.toml.
+    """
+    _scan(
+        workspace, strict=strict, show_all=show_all, deep=deep, include_env=include_env, agent=agent
+    )
 
 
 @app.command()

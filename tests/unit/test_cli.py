@@ -36,14 +36,6 @@ def test_help_explains_the_question_and_the_promises(
     assert "--version" in out
 
 
-def test_no_arguments_shows_usage_with_exit_code_2(
-    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
-) -> None:
-    assert run_main(monkeypatch) == 2
-    captured = capsys.readouterr()
-    assert "Usage" in captured.out + captured.err
-
-
 def test_unknown_option_is_a_usage_error(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
