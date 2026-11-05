@@ -69,8 +69,14 @@ def _match_segments(pattern: list[str], path: list[str], ignore_case: bool) -> b
     return _match_segments(rest, path[1:], ignore_case)
 
 
+ANYWHERE = "**"
+"""The pattern that covers every path on every system (a bare ``Read`` rule)."""
+
+
 def matches(pattern: str, path: str) -> bool:
     """Whether absolute ``path`` is covered by absolute ``pattern``."""
+    if pattern == ANYWHERE:
+        return True
     pattern_parts, pattern_windows = _segments(pattern)
     path_parts, path_windows = _segments(path)
     if pattern_windows != path_windows:

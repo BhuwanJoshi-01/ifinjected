@@ -42,6 +42,7 @@ from ifinjected.policy.model import (
     ReadRule,
     SandboxPolicy,
 )
+from ifinjected.policy.patterns import ANYWHERE
 
 AGENT = AgentId.CLAUDE_CODE
 MAX_STATE_BYTES = 16 * 1024 * 1024
@@ -239,7 +240,7 @@ def _read_rules(
             if spec is None or spec.strip() in {"", "*", "**"}:
                 rules.append(
                     ReadRule(
-                        "/**" if p.system is not System.WINDOWS else "C:\\**",
+                        ANYWHERE,
                         gate,
                         _FILE_CHANNELS,
                         source,
