@@ -1,0 +1,35 @@
+name: PyPI
+
+# Installs the published package the way the README says, on every OS, after each release
+# and once a week, so a broken upload or a dependency that stops resolving shows up here
+# before users report it.
+on:
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      - name: uvx ifinjected, from PyPI, in an empty directory
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP"
+          uvx --isolated --refresh ifinjected --version
+          uvx --isolated ifinjected rules > rules.txt
+          grep -q IFJ-TRIFECTA-001 rules.txt
+          uvx --isolated ifinjected scan --format json > scan.json
+          uv run --no-project python -c "import json; d = json.load(open('scan.json')); assert d['schema_version'] == 1, d"
