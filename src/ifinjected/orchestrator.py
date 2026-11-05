@@ -65,3 +65,13 @@ def inspect_all(platform: Platform, policy: Policy, workspace: Path | None = Non
         exposures=exposed,
         trifectas=trifectas(agents, exposed, items),
     )
+
+
+def diagnose(snapshot: Snapshot) -> Snapshot:
+    """``snapshot`` with the findings of every built-in rule."""
+    from dataclasses import replace
+
+    from ifinjected.rules.catalog import builtin_rules
+    from ifinjected.rules.engine import evaluate
+
+    return replace(snapshot, findings=evaluate(snapshot, builtin_rules()))
