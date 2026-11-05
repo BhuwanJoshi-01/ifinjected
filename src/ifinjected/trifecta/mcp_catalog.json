@@ -1,0 +1,440 @@
+{
+  "retrieved": "2026-11-05",
+  "sources": {
+    "trifecta": {
+      "title": "Simon Willison: The lethal trifecta for AI agents",
+      "url": "https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/"
+    }
+  },
+  "servers": [
+    {
+      "id": "filesystem",
+      "title": "Filesystem",
+      "match": {
+        "packages": [
+          "@modelcontextprotocol/server-filesystem"
+        ]
+      },
+      "capabilities": [
+        "reads_files",
+        "writes_files"
+      ],
+      "source": "https://github.com/modelcontextprotocol/servers",
+      "note": "Reads and writes files in the directories it is given, outside any agent sandbox."
+    },
+    {
+      "id": "fetch",
+      "title": "Fetch",
+      "match": {
+        "packages": [
+          "mcp-server-fetch",
+          "@modelcontextprotocol/server-fetch"
+        ]
+      },
+      "capabilities": [
+        "untrusted_input",
+        "exfiltration"
+      ],
+      "source": "https://github.com/modelcontextprotocol/servers",
+      "note": "Fetches any URL: web pages come in, and data can leave in the URL."
+    },
+    {
+      "id": "git",
+      "title": "Git",
+      "match": {
+        "packages": [
+          "mcp-server-git"
+        ]
+      },
+      "capabilities": [
+        "reads_files",
+        "private_data"
+      ],
+      "source": "https://github.com/modelcontextprotocol/servers",
+      "note": "Reads repositories on disk."
+    },
+    {
+      "id": "memory",
+      "title": "Memory",
+      "match": {
+        "packages": [
+          "@modelcontextprotocol/server-memory"
+        ]
+      },
+      "capabilities": [],
+      "source": "https://github.com/modelcontextprotocol/servers",
+      "note": "A local knowledge graph."
+    },
+    {
+      "id": "sequential-thinking",
+      "title": "Sequential thinking",
+      "match": {
+        "packages": [
+          "@modelcontextprotocol/server-sequential-thinking"
+        ]
+      },
+      "capabilities": [],
+      "source": "https://github.com/modelcontextprotocol/servers",
+      "note": "No outside access."
+    },
+    {
+      "id": "github-archived",
+      "title": "GitHub (reference server)",
+      "match": {
+        "packages": [
+          "@modelcontextprotocol/server-github"
+        ]
+      },
+      "capabilities": [
+        "untrusted_input",
+        "exfiltration",
+        "private_data"
+      ],
+      "source": "https://github.com/modelcontextprotocol/servers-archived",
+      "note": "Issues and pull requests anyone can write come in; issues, comments and pushes go out."
+    },
+    {
+      "id": "github",
+      "title": "GitHub",
+      "match": {
+        "packages": [
+          "ghcr.io/github/github-mcp-server",
+          "github-mcp-server"
+        ],
+        "hosts": [
+          "api.githubcopilot.com"
+        ]
+      },
+      "capabilities": [
+        "untrusted_input",
+        "exfiltration",
+        "private_data"
+      ],
+      "source": "https://github.com/github/github-mcp-server",
+      "note": "Issues and pull requests anyone can write come in; issues, comments and pushes go out."
+    },
+    {
+      "id": "gitlab",
+      "title": "GitLab",
+      "match": {
+        "packages": [
+          "@modelcontextprotocol/server-gitlab"
+        ]
+      },
+      "capabilities": [
+        "untrusted_input",
+        "exfiltration",
+        "private_data"
+      ],
+      "source": "https://github.com/modelcontextprotocol/servers-archived",
+      "note": "Issues and merge requests in and out."
+    },
+    {
+      "id": "slack",
+      "title": "Slack",
+      "match": {
+        "packages": [
+          "@modelcontextprotocol/server-slack"
+        ]
+      },
+      "capabilities": [
+        "untrusted_input",
+        "exfiltration",
+        "private_data"
+      ],
+      "source": "https://github.com/modelcontextprotocol/servers-archived",
+      "note": "Messages anyone can send come in; posts go out."
+    },
+    {
+      "id": "postgres",
+      "title": "PostgreSQL",
+      "match": {
+        "packages": [
+          "@modelcontextprotocol/server-postgres"
+        ]
+      },
+      "capabilities": [
+        "private_data"
+      ],
+      "source": "https://github.com/modelcontextprotocol/servers-archived",
+      "note": "Reads a database."
+    },
+    {
+      "id": "sqlite",
+      "title": "SQLite",
+      "match": {
+        "packages": [
+          "mcp-server-sqlite"
+        ]
+      },
+      "capabilities": [
+        "private_data",
+        "reads_files"
+      ],
+      "source": "https://github.com/modelcontextprotocol/servers-archived",
+      "note": "Reads and writes a database file."
+    },
+    {
+      "id": "puppeteer",
+      "title": "Puppeteer",
+      "match": {
+        "packages": [
+          "@modelcontextprotocol/server-puppeteer"
+        ]
+      },
+      "capabilities": [
+        "untrusted_input",
+        "exfiltration"
+      ],
+      "source": "https://github.com/modelcontextprotocol/servers-archived",
+      "note": "Drives a browser: any page comes in, any URL goes out."
+    },
+    {
+      "id": "playwright",
+      "title": "Playwright",
+      "match": {
+        "packages": [
+          "@playwright/mcp"
+        ]
+      },
+      "capabilities": [
+        "untrusted_input",
+        "exfiltration"
+      ],
+      "source": "https://github.com/microsoft/playwright-mcp",
+      "note": "Drives a browser: any page comes in, any URL goes out."
+    },
+    {
+      "id": "chrome-devtools",
+      "title": "Chrome DevTools",
+      "match": {
+        "packages": [
+          "chrome-devtools-mcp"
+        ]
+      },
+      "capabilities": [
+        "untrusted_input",
+        "exfiltration",
+        "private_data"
+      ],
+      "source": "https://github.com/ChromeDevTools/chrome-devtools-mcp",
+      "note": "Drives your Chrome, possibly with your signed-in sessions."
+    },
+    {
+      "id": "brave-search",
+      "title": "Brave Search",
+      "match": {
+        "packages": [
+          "@modelcontextprotocol/server-brave-search",
+          "@brave/brave-search-mcp-server"
+        ]
+      },
+      "capabilities": [
+        "untrusted_input"
+      ],
+      "source": "https://github.com/brave/brave-search-mcp-server",
+      "note": "Search results come in."
+    },
+    {
+      "id": "tavily",
+      "title": "Tavily",
+      "match": {
+        "packages": [
+          "tavily-mcp"
+        ],
+        "hosts": [
+          "mcp.tavily.com"
+        ]
+      },
+      "capabilities": [
+        "untrusted_input",
+        "exfiltration"
+      ],
+      "source": "https://github.com/tavily-ai/tavily-mcp",
+      "note": "Search and page extraction: web content comes in."
+    },
+    {
+      "id": "exa",
+      "title": "Exa",
+      "match": {
+        "packages": [
+          "exa-mcp-server"
+        ],
+        "hosts": [
+          "mcp.exa.ai"
+        ]
+      },
+      "capabilities": [
+        "untrusted_input"
+      ],
+      "source": "https://github.com/exa-labs/exa-mcp-server",
+      "note": "Search results come in."
+    },
+    {
+      "id": "firecrawl",
+      "title": "Firecrawl",
+      "match": {
+        "packages": [
+          "firecrawl-mcp"
+        ]
+      },
+      "capabilities": [
+        "untrusted_input",
+        "exfiltration"
+      ],
+      "source": "https://github.com/firecrawl/firecrawl-mcp-server",
+      "note": "Scrapes any URL."
+    },
+    {
+      "id": "context7",
+      "title": "Context7",
+      "match": {
+        "packages": [
+          "@upstash/context7-mcp"
+        ],
+        "hosts": [
+          "mcp.context7.com"
+        ]
+      },
+      "capabilities": [
+        "untrusted_input"
+      ],
+      "source": "https://github.com/upstash/context7",
+      "note": "Library documentation from a third party comes in."
+    },
+    {
+      "id": "notion",
+      "title": "Notion",
+      "match": {
+        "packages": [
+          "@notionhq/notion-mcp-server"
+        ],
+        "hosts": [
+          "mcp.notion.com"
+        ]
+      },
+      "capabilities": [
+        "untrusted_input",
+        "exfiltration",
+        "private_data"
+      ],
+      "source": "https://github.com/makenotion/notion-mcp-server",
+      "note": "Shared pages come in; pages can be written."
+    },
+    {
+      "id": "linear",
+      "title": "Linear",
+      "match": {
+        "hosts": [
+          "mcp.linear.app"
+        ]
+      },
+      "capabilities": [
+        "untrusted_input",
+        "exfiltration",
+        "private_data"
+      ],
+      "source": "https://linear.app/docs/mcp",
+      "note": "Issues anyone in the workspace writes come in; issues and comments go out."
+    },
+    {
+      "id": "sentry",
+      "title": "Sentry",
+      "match": {
+        "packages": [
+          "@sentry/mcp-server"
+        ],
+        "hosts": [
+          "mcp.sentry.dev"
+        ]
+      },
+      "capabilities": [
+        "untrusted_input",
+        "private_data"
+      ],
+      "source": "https://github.com/getsentry/sentry-mcp",
+      "note": "Error reports, including attacker-controlled text, come in."
+    },
+    {
+      "id": "supabase",
+      "title": "Supabase",
+      "match": {
+        "packages": [
+          "@supabase/mcp-server-supabase"
+        ],
+        "hosts": [
+          "mcp.supabase.com"
+        ]
+      },
+      "capabilities": [
+        "private_data",
+        "exfiltration"
+      ],
+      "source": "https://github.com/supabase-community/supabase-mcp",
+      "note": "Queries and changes your databases."
+    },
+    {
+      "id": "stripe",
+      "title": "Stripe",
+      "match": {
+        "packages": [
+          "@stripe/mcp"
+        ],
+        "hosts": [
+          "mcp.stripe.com"
+        ]
+      },
+      "capabilities": [
+        "private_data",
+        "exfiltration"
+      ],
+      "source": "https://github.com/stripe/agent-toolkit",
+      "note": "Reads and changes payments data."
+    },
+    {
+      "id": "aws-proxy",
+      "title": "AWS (MCP proxy)",
+      "match": {
+        "packages": [
+          "mcp-proxy-for-aws"
+        ]
+      },
+      "capabilities": [
+        "private_data",
+        "exfiltration"
+      ],
+      "source": "https://github.com/aws/mcp-proxy-for-aws",
+      "note": "Calls AWS APIs with your credentials."
+    },
+    {
+      "id": "awslabs",
+      "title": "AWS Labs servers",
+      "match": {
+        "package_prefixes": [
+          "awslabs."
+        ]
+      },
+      "capabilities": [
+        "private_data",
+        "exfiltration"
+      ],
+      "source": "https://github.com/awslabs/mcp",
+      "note": "Calls AWS APIs with your credentials."
+    },
+    {
+      "id": "blender",
+      "title": "Blender",
+      "match": {
+        "packages": [
+          "blender-mcp"
+        ]
+      },
+      "capabilities": [
+        "runs_code",
+        "reads_files"
+      ],
+      "source": "https://github.com/ahujasid/blender-mcp",
+      "note": "Runs Python inside Blender, which can open any file you can."
+    }
+  ]
+}

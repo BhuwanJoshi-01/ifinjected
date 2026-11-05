@@ -11,7 +11,7 @@ ignored as a default mode in project and local files.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path, PurePosixPath
 from typing import Any
 from urllib.parse import urlsplit
@@ -425,6 +425,53 @@ def _mcp_servers(
     return servers
 
 
+def _mcp_gate(server: McpServer, merged: _Merged, mode: str) -> Gate:
+    """How Claude Code gates calls to a server's tools: deny and allow rules naming
+    ``mcp__<server>`` first, then the permission mode (tools ask on first use)."""
+    prefix = f"mcp__{server.name}"
+    names = {prefix, f"{prefix}__*"}
+
+    def names_server(rule: str) -> bool:
+        return rule in names or rule.startswith(prefix + "__")
+
+    if any(names_server(rule) for rule, _, _ in merged.deny):
+        return Gate.DENIED
+    if mode == "bypassPermissions" or any(rule in names for rule, _, _ in merged.allow):
+        return Gate.NONE
+    if mode == "auto":
+        return Gate.AUTOMATED
+    if mode == "dontAsk":
+        return Gate.DENIED
+    return Gate.HUMAN
+
+
+def _mcp_channels(servers: list[McpServer], merged: _Merged, mode: str) -> list[ChannelPolicy]:
+    """A channel for every local server that can open files: it runs with your full
+    access, outside the sandbox, and no Read rule applies to it."""
+    from ifinjected.trifecta.classify import Capability, classify
+
+    channels = []
+    for server in servers:
+        if server.approved is False:
+            continue
+        classification = classify(server)
+        if not classification.local:
+            continue
+        if classification.has(Capability.READS_FILES) or classification.has(Capability.RUNS_CODE):
+            gate = _mcp_gate(server, merged, mode)
+            channels.append(
+                ChannelPolicy(
+                    Channel.MCP,
+                    gate,
+                    gate,
+                    sandboxed=False,
+                    note=f"MCP server {server.name}",
+                    source=server.source,
+                )
+            )
+    return channels
+
+
 def inspect_claude_code(p: Platform, policy: Policy, workspace: Path | None) -> AgentReport:
     """Read Claude Code's configuration for ``workspace`` and work out what it may do."""
     state = _state(p, policy)
@@ -551,6 +598,9 @@ def inspect_claude_code(p: Platform, policy: Policy, workspace: Path | None) -> 
         unknowns=tuple(unknowns),
     )
     servers = _mcp_servers(p, workspace, state, merged, project_state, project_key, policy, layers)
+    mcp_channels = _mcp_channels(servers, merged, mode)
+    if mcp_channels:
+        effective = replace(effective, channels=(*effective.channels, *mcp_channels))
     settings: list[tuple[str, str, SourceRef | None]] = [
         ("permission mode", mode, mode_value[2] if mode_value else None)
     ]

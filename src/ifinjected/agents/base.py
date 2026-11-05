@@ -162,6 +162,32 @@ _VALUE_FLAGS = frozenset(
 """Launcher flags that take a value that is not the package (``uvx --python 3.11 x``)."""
 
 
+_DOCKER_VALUE_FLAGS = frozenset(
+    {"-e", "--env", "--env-file", "-v", "--volume", "--name", "-p", "--publish", "--network",
+     "-w", "--workdir", "--entrypoint", "-u", "--user", "--mount", "--platform", "-l", "--label"}
+)  # fmt: skip
+
+
+def _docker_image(args: list[str]) -> str | None:
+    """The image of ``docker run [flags] IMAGE [command]``."""
+    if "run" not in args:
+        return None
+    rest = args[args.index("run") + 1 :]
+    skip = False
+    for arg in rest:
+        if skip:
+            skip = False
+            continue
+        if arg in _DOCKER_VALUE_FLAGS:
+            skip = True
+            continue
+        if arg.startswith("-"):
+            continue
+        name = arg.rsplit("/", 1)[-1]
+        return arg.rsplit(":", 1)[0] if ":" in name else arg  # drop the tag, keep host:port
+    return None
+
+
 def _launched_package(args: list[str]) -> str | None:
     skip = False
     for index, arg in enumerate(args):
@@ -200,4 +226,6 @@ def describe_command(command: Any, args: Any) -> tuple[str | None, str | None]:
         program = f"{program} {parts[1]}"
     if program.split()[0] in _LAUNCHERS or program in {"pnpm dlx", "yarn dlx", "npm exec"}:
         package = _launched_package(rest)
+    elif program in {"docker", "podman"}:
+        package = _docker_image(rest)
     return program, package
