@@ -31,7 +31,10 @@ classifiers = [
     "Topic :: Utilities",
     "Typing :: Typed",
 ]
-dependencies = []
+dependencies = [
+    "rich>=15.0.0",
+    "typer>=0.27.3",
+]
 
 [project.urls]
 Homepage = "https://bhuwanjoshi-01.github.io/ifinjected/"
