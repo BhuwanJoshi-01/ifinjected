@@ -278,6 +278,25 @@ def report(
     typer.echo(f"Wrote {output}")
 
 
+class PlanFormat(StrEnum):
+    TEXT = "text"
+    JSON = "json"
+
+
+@app.command()
+def plan(
+    workspace: Annotated[Path, _WORKSPACE_OPTION] = Path(),
+    output_format: Annotated[PlanFormat, _FORMAT_OPTION] = PlanFormat.TEXT,
+) -> None:
+    """Show the configuration changes that close each agent's exposures. Applies nothing."""
+    from ifinjected.plan import make_plan, render_plan_json, render_plan_text
+
+    snapshot, _ = _diagnosed(workspace, deep=False, include_env=False, agent=None)
+    steps = make_plan(snapshot, str(Platform.current().home))
+    text = render_plan_json(steps) if output_format is PlanFormat.JSON else render_plan_text(steps)
+    typer.echo(Redactor(RedactionContext.current()).text(text), nl=False)
+
+
 @app.command()
 def explain(
     code: Annotated[str, typer.Argument(metavar="CODE", help="A finding code, e.g. IFJ-READ-003.")],
