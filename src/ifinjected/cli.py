@@ -8,6 +8,7 @@ from __future__ import annotations
 import dataclasses
 import os
 import sys
+from enum import StrEnum
 from pathlib import Path
 from typing import Annotated
 
@@ -18,7 +19,7 @@ from ifinjected import __version__
 from ifinjected.config import PolicyError, apply_overrides, load_policy
 from ifinjected.exit_codes import ExitCode
 from ifinjected.homes import Platform
-from ifinjected.models import AgentId, Policy
+from ifinjected.models import AgentId, Policy, Snapshot
 from ifinjected.orchestrator import inspect_all, inspect_inventory
 from ifinjected.privacy import RedactionContext, Redactor, redacted_with_counts
 from ifinjected.reports.agents import render_agents
@@ -153,22 +154,39 @@ def agents(
     render_agents(dataclasses.replace(redacted, redactions=counts), Console(highlight=False))
 
 
+class Format(StrEnum):
+    TERMINAL = "terminal"
+    JSON = "json"
+    MARKDOWN = "markdown"
+    SARIF = "sarif"
+
+
+class ReportFormat(StrEnum):
+    MARKDOWN = "markdown"
+    JSON = "json"
+    SARIF = "sarif"
+
+
+_FORMAT_OPTION = typer.Option("--format", "-f", help="terminal, json, markdown or sarif.")
 _STRICT_OPTION = typer.Option("--strict", help="Exit with 1 when a finding fails under the policy.")
 _ALL_OPTION = typer.Option("--all", help="List every warning instead of folding them per rule.")
 
 
-def _scan(
-    workspace: Path,
-    *,
-    strict: bool,
-    show_all: bool,
-    deep: bool,
-    include_env: bool,
-    agent: list[AgentId] | None,
-) -> None:
-    from ifinjected.models import Status
+def _rendered(snapshot: Snapshot, output_format: str) -> str:
+    from ifinjected.reports.formats import render_json, render_markdown, render_sarif
+
+    if output_format == Format.JSON:
+        return render_json(snapshot)
+    if output_format == Format.SARIF:
+        return render_sarif(snapshot)
+    return render_markdown(snapshot)
+
+
+def _diagnosed(
+    workspace: Path, *, deep: bool, include_env: bool, agent: list[AgentId] | None
+) -> tuple[Snapshot, Snapshot]:
+    """(the diagnosed snapshot, its redacted copy with the redaction counts)."""
     from ifinjected.orchestrator import diagnose
-    from ifinjected.reports.scan import render_scan
 
     redactor = Redactor(RedactionContext.current())
     root = workspace.absolute()
@@ -180,11 +198,27 @@ def _scan(
     )
     snapshot = diagnose(inspect_all(Platform.current(), effective, root))
     redacted, counts = redacted_with_counts(snapshot)
-    render_scan(
-        dataclasses.replace(redacted, redactions=counts),
-        Console(highlight=False),
-        show_all=show_all,
-    )
+    return snapshot, dataclasses.replace(redacted, redactions=counts)
+
+
+def _scan(
+    workspace: Path,
+    *,
+    strict: bool,
+    show_all: bool,
+    deep: bool,
+    include_env: bool,
+    agent: list[AgentId] | None,
+    output_format: Format = Format.TERMINAL,
+) -> None:
+    from ifinjected.models import Status
+    from ifinjected.reports.scan import render_scan
+
+    snapshot, redacted = _diagnosed(workspace, deep=deep, include_env=include_env, agent=agent)
+    if output_format is Format.TERMINAL:
+        render_scan(redacted, Console(highlight=False), show_all=show_all)
+    else:
+        typer.echo(_rendered(redacted, output_format), nl=False)
     if strict and any(f.status is Status.FAIL for f in snapshot.findings):
         raise typer.Exit(ExitCode.STRICT_FAILURE)
 
@@ -197,6 +231,7 @@ def scan(
     deep: Annotated[bool, _DEEP_OPTION] = False,
     include_env: Annotated[bool, _ENV_OPTION] = False,
     agent: Annotated[list[AgentId] | None, _AGENT_OPTION] = None,
+    output_format: Annotated[Format, _FORMAT_OPTION] = Format.TERMINAL,
 ) -> None:
     """What could a prompt-injected agent reach here? A grade per agent, then the fixes.
 
@@ -205,8 +240,42 @@ def scan(
     --strict when a finding fails the policy in .ifinjected.toml.
     """
     _scan(
-        workspace, strict=strict, show_all=show_all, deep=deep, include_env=include_env, agent=agent
+        workspace,
+        strict=strict,
+        show_all=show_all,
+        deep=deep,
+        include_env=include_env,
+        agent=agent,
+        output_format=output_format,
     )
+
+
+@app.command()
+def report(
+    output: Annotated[
+        Path, typer.Option("--output", "-o", metavar="FILE", help="Where to write; - for stdout.")
+    ],
+    output_format: Annotated[ReportFormat, _FORMAT_OPTION] = ReportFormat.MARKDOWN,
+    workspace: Annotated[Path, _WORKSPACE_OPTION] = Path(),
+    deep: Annotated[bool, _DEEP_OPTION] = False,
+    include_env: Annotated[bool, _ENV_OPTION] = False,
+    force: Annotated[bool, typer.Option("--force", help="Overwrite an existing file.")] = False,
+) -> None:
+    """Write a redacted report (Markdown, JSON or SARIF) to a file you name.
+
+    The only command that writes anything, and only the file given with --output; an
+    existing file is kept unless --force is given.
+    """
+    _, redacted = _diagnosed(workspace, deep=deep, include_env=include_env, agent=None)
+    text = _rendered(redacted, Format(output_format.value))
+    if str(output) == "-":
+        typer.echo(text, nl=False)
+        return
+    if output.exists() and not force:
+        typer.echo(f"ifinjected: {output} exists; use --force to overwrite it", err=True)
+        raise typer.Exit(ExitCode.ERROR)
+    output.write_text(text, encoding="utf-8")
+    typer.echo(f"Wrote {output}")
 
 
 @app.command()

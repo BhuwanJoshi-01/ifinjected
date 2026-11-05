@@ -1,0 +1,215 @@
+"""Machine-readable and shareable reports: JSON, Markdown and SARIF 2.1.0.
+
+Every renderer takes an already redacted snapshot. JSON is the contract for scripts and
+agents (``schema_version`` 1, documented in ``docs/json-output.md``); SARIF is for code
+scanning, with a result per located problem; Markdown is for an issue or a pull request.
+"""
+
+from __future__ import annotations
+
+import dataclasses
+import hashlib
+import json
+import re
+from enum import Enum
+from pathlib import PurePath
+from typing import Any
+
+from ifinjected.models import Finding, Snapshot, Status
+from ifinjected.rules.catalog import builtin_rules
+from ifinjected.trifecta.verdict import machine_grade
+
+PROJECT_URL = "https://github.com/BhuwanJoshi-01/ifinjected"
+SARIF_SCHEMA = "https://json.schemastore.org/sarif-2.1.0.json"
+_LEVEL = {Status.FAIL: "error", Status.WARN: "warning", Status.UNKNOWN: "note"}
+_PROBLEMS = {Status.FAIL, Status.WARN, Status.UNKNOWN}
+
+
+def _plain(value: Any) -> Any:
+    if isinstance(value, Enum):
+        return value.value
+    if dataclasses.is_dataclass(value) and not isinstance(value, type):
+        return {f.name: _plain(getattr(value, f.name)) for f in dataclasses.fields(value)}
+    if isinstance(value, (tuple, list)):
+        return [_plain(v) for v in value]
+    if isinstance(value, frozenset | set):
+        return sorted(_plain(v) for v in value)
+    if isinstance(value, dict):
+        return {str(_plain(k)): _plain(v) for k, v in value.items()}
+    if isinstance(value, PurePath):
+        return str(value)
+    return value
+
+
+def summary(snapshot: Snapshot) -> dict[str, Any]:
+    problems = [f for f in snapshot.findings if f.status in _PROBLEMS]
+    grade = machine_grade(snapshot.trifectas)
+    return {
+        "grade": grade.value if grade else None,
+        "agents": [
+            {"agent": t.agent.value, "grade": t.grade.value, "verdict": t.verdict.value}
+            for t in snapshot.trifectas
+        ],
+        "problems": len(problems),
+        "failing": sum(1 for f in problems if f.status is Status.FAIL),
+        "strict_failure": any(f.status is Status.FAIL for f in problems),
+        "sensitive_items": len(snapshot.items),
+    }
+
+
+def render_json(snapshot: Snapshot) -> str:
+    """The whole snapshot, with a summary first. Pass a redacted snapshot."""
+    data = _plain(snapshot)
+    agents = []
+    for report in data.pop("agents"):
+        policy = report.pop("policy") or {}
+        report["channels"] = policy.get("channels", [])
+        report["sandbox"] = policy.get("sandbox")
+        report["read_rules"] = policy.get("rules", [])
+        report["unknowns"] = policy.get("unknowns", [])
+        report["settings"] = [
+            {"name": name, "value": value, "source": source}
+            for name, value, source in report["settings"]
+        ]
+        agents.append(report)
+    trifectas = []
+    for trifecta in data.pop("trifectas"):
+        for leg in ("private", "input", "exfil"):
+            trifecta[leg] = {"members": trifecta[leg]["members"]}
+        trifectas.append(trifecta)
+    document = {
+        "schema_version": data.pop("schema_version"),
+        "tool": "ifinjected",
+        "tool_version": data.pop("tool_version"),
+        "created_at": data.pop("created_at"),
+        "summary": summary(snapshot),
+        **data,
+        "agents": agents,
+        "trifectas": trifectas,
+    }
+    return json.dumps(document, indent=2, ensure_ascii=False) + "\n"
+
+
+def _cell(text: str) -> str:
+    return text.replace("|", "\\|").replace("\n", " ")
+
+
+def render_markdown(snapshot: Snapshot) -> str:
+    """A report to paste into an issue or a pull request. Pass a redacted snapshot."""
+    grade = machine_grade(snapshot.trifectas)
+    lines = [
+        "# ifinjected report",
+        "",
+        "What a prompt-injected coding agent could reach on this machine.",
+        f"ifinjected {snapshot.tool_version}, {snapshot.system}, {snapshot.created_at}.",
+        "",
+    ]
+    if grade is not None:
+        lines += [f"**Grade: {grade.value}**", "", "| Agent | Grade | Verdict |", "|---|---|---|"]
+        for t in snapshot.trifectas:
+            verdict = t.verdict.value.replace("_", " ")
+            lines.append(f"| {t.agent.display_name} | {t.grade.value} | {verdict} |")
+        lines.append("")
+    problems = sorted(
+        (f for f in snapshot.findings if f.status in _PROBLEMS),
+        key=lambda f: (f.status is not Status.FAIL, f.id),
+    )
+    if problems:
+        lines += ["| Status | Code | Finding |", "|---|---|---|"]
+        for finding in problems:
+            lines.append(f"| {finding.status.value} | `{finding.id}` | {_cell(finding.summary)} |")
+        lines.append("")
+    if snapshot.redactions:
+        removed = ", ".join(f"{r.count} {r.kind.replace('_', ' ')}" for r in snapshot.redactions)
+        lines.append(f"Redacted: {removed}.")
+    lines.append(f"Generated by [ifinjected]({PROJECT_URL}).")
+    return "\n".join(lines) + "\n"
+
+
+def _anchor(rule_id: str, title: str) -> str:
+    heading = f"{rule_id}: {title}".lower()
+    return re.sub(r"[^a-z0-9 -]", "", heading).replace(" ", "-")
+
+
+def _uri(path: str, workspace: str | None) -> str:
+    if workspace and (
+        path == workspace
+        or path.startswith(workspace.rstrip("/\\") + ("/" if "/" in workspace else "\\"))
+    ):
+        relative = path[len(workspace) :].lstrip("/\\")
+        return relative.replace("\\", "/") or "."
+    return path.replace("\\", "/")
+
+
+def _result(finding: Finding, index: int, workspace: str | None) -> dict[str, Any]:
+    locations = []
+    for source in finding.sources:
+        region = {"startLine": source.line} if source.line else {}
+        physical: dict[str, Any] = {"artifactLocation": {"uri": _uri(source.path, workspace)}}
+        if region:
+            physical["region"] = region
+        locations.append({"physicalLocation": physical})
+    key = "|".join(
+        [
+            finding.id,
+            finding.agent.value if finding.agent else "",
+            finding.item or "",
+            *(s.path for s in finding.sources[:1]),
+        ]
+    )
+    return {
+        "ruleId": finding.id,
+        "ruleIndex": index,
+        "level": _LEVEL[finding.status],
+        "message": {"text": f"{finding.summary}. {finding.reason}"},
+        "locations": locations,
+        "partialFingerprints": {"ifinjected/v1": hashlib.sha256(key.encode()).hexdigest()[:32]},
+        "properties": {
+            "severity": finding.severity.value,
+            "agent": finding.agent.value if finding.agent else None,
+        },
+    }
+
+
+def render_sarif(snapshot: Snapshot) -> str:
+    """One SARIF run with every rule and a result per located problem."""
+    rules = builtin_rules()
+    index = {rule.id: i for i, rule in enumerate(rules)}
+    results = [
+        _result(f, index[f.id], snapshot.workspace)
+        for f in snapshot.findings
+        if f.status in _LEVEL and f.sources and f.id in index
+    ]
+    document = {
+        "$schema": SARIF_SCHEMA,
+        "version": "2.1.0",
+        "runs": [
+            {
+                "tool": {
+                    "driver": {
+                        "name": "ifinjected",
+                        "version": snapshot.tool_version,
+                        "informationUri": PROJECT_URL,
+                        "rules": [
+                            {
+                                "id": rule.id,
+                                "name": rule.id.replace("-", ""),
+                                "shortDescription": {"text": rule.title},
+                                "fullDescription": {"text": rule.explanation},
+                                "helpUri": f"{PROJECT_URL}/blob/main/docs/rules.md#"
+                                + _anchor(rule.id, rule.title),
+                                "defaultConfiguration": {
+                                    "level": "error"
+                                    if rule.family.value in {"READ", "TRIFECTA", "DIFF", "PROVE"}
+                                    else "warning"
+                                },
+                            }
+                            for rule in rules
+                        ],
+                    }
+                },
+                "results": results,
+            }
+        ],
+    }
+    return json.dumps(document, indent=2, ensure_ascii=False) + "\n"
