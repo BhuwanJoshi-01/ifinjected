@@ -229,4 +229,4 @@ def test_the_fake_machine_writes_where_the_resolvers_look(tmp_path: Path) -> Non
     machine.add_credentials()
     assert (p.home / ".ssh" / "id_ed25519").is_file()
     assert (machine.workspace / ".env").is_file()
-    assert not str(p.home).startswith(str(Path.home()))
+    assert p.home.is_relative_to(tmp_path)  # never the real home
