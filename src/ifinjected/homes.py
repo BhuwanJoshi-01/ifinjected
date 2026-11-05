@@ -117,6 +117,15 @@ class Platform:
         return self._env_path("APPDATA") or self.home / "AppData" / "Roaming"
 
     @property
+    def localappdata(self) -> Path:
+        """``%LOCALAPPDATA%`` (Windows local application data)."""
+        return self._env_path("LOCALAPPDATA") or self.home / "AppData" / "Local"
+
+    @property
+    def xdg_cache_home(self) -> Path:
+        return self._env_path("XDG_CACHE_HOME") or self.home / ".cache"
+
+    @property
     def program_data(self) -> Path:
         """``%ProgramData%``, where Windows keeps machine-wide policy files."""
         return self._env_path("ProgramData") or self.system_path("C:\\ProgramData")
