@@ -20,7 +20,10 @@ The first release candidate.
   variable names.
 - `ifinjected agents`, `plan`, `explain`, `rules`, `policy`, `report`, `card`,
   `share` and `badge`.
-- 38 rules with stable codes (docs/rules.md, generated), a workspace policy
+- 47 rules with stable codes (docs/rules.md, generated), a workspace policy
   (`.ifinjected.toml`), and docs/what-is-read.md generated from the catalog.
+- `ifinjected prove --run [--network]`: an open-only probe run directly and under
+  `codex sandbox`, turning Codex's claimed reach into proven or contradicted
+  (IFJ-PROVE-001 to 003).
 - Privacy contracts: a read ledger checked against the catalog, and canary secrets
   that must reach no output.

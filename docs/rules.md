@@ -397,6 +397,33 @@ Family `trifecta`, default level `deny` (never more than a warning).
 Sources: <https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/>
 
 
+# Prove mode
+
+## IFJ-PROVE-001: The sandbox opened what the configuration denies
+
+``prove --run`` ran the probe under the agent's own sandbox, and it opened a file
+the agent's configuration says the sandbox refuses. The protection is not there:
+check the sandbox's version, the platform it runs on, and the settings it really
+reads.
+
+Family `prove`, default level `deny`.
+
+## IFJ-PROVE-002: Proven: the sandbox opens this credential
+
+The probe, run under the agent's own sandbox, opened the credential the
+configuration says it can reach: the finding is not a reading of documentation but
+an observation on this machine. Only the open is attempted; nothing is read.
+
+Family `prove`, default level `deny` (never more than a warning).
+
+## IFJ-PROVE-003: A sandboxed command reached the network
+
+With ``--network``, the probe connected to the target from inside a sandbox whose
+configuration closes the network. Data could leave the same way.
+
+Family `prove`, default level `deny`.
+
+
 # Changes in a pull request
 
 ## IFJ-DIFF-001: The change gives agents more permission

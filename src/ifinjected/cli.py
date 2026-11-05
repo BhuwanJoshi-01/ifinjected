@@ -340,6 +340,81 @@ def diff(
         raise typer.Exit(ExitCode.STRICT_FAILURE)
 
 
+@app.command()
+def prove(
+    run: Annotated[
+        bool, typer.Option("--run", help="Run the probe (without it, only explain).")
+    ] = False,
+    network: Annotated[
+        bool, typer.Option("--network", help="Also try one TCP connection from inside the sandbox.")
+    ] = False,
+    target: Annotated[
+        str, typer.Option("--target", metavar="HOST:PORT", help="Where --network connects.")
+    ] = "example.com:443",
+    workspace: Annotated[Path, _WORKSPACE_OPTION] = Path(),
+) -> None:
+    """Check the claims against this machine: open credential files under Codex's sandbox.
+
+    A fixed probe calls open() and close() on each credential's path, never read(),
+    once directly and once inside the sandbox (codex sandbox --). With --network it
+    makes one TCP connection to --target and sends nothing. Other agents' sandboxes
+    cannot be run from outside yet; their results stay claimed.
+    """
+    from ifinjected.models import AgentId as Agent
+    from ifinjected.prove.runners import codex_available, run_codex, run_direct
+    from ifinjected.prove.verdicts import judge, probe_paths
+    from ifinjected.runner import SubprocessRunner
+
+    if not run:
+        typer.echo(
+            "prove --run opens (never reads) each credential's path directly and inside Codex's\n"
+            "sandbox, and reports where the configuration's claims hold. --network also tries one\n"
+            "connection to --target from inside the sandbox. Nothing runs without --run."
+        )
+        return
+    snapshot, _ = _diagnosed(workspace, deep=False, include_env=False, agent=None)
+    redactor = Redactor(RedactionContext.current())
+    codex = next((a for a in snapshot.agents if a.agent is Agent.CODEX and a.found), None)
+    if codex is None or not codex_available():
+        typer.echo(
+            "Codex is not installed here; nothing can be proven yet (other sandboxes are claimed)."
+        )
+        return
+    paths = [path for path, *_ in probe_paths(snapshot, Agent.CODEX)]
+    runner = SubprocessRunner()
+    connect = target if network else None
+    root = workspace.absolute()
+    direct = run_direct(runner, paths, None, root)
+    sandboxed = run_codex(runner, paths, connect, root)
+    if sandboxed.problem:
+        typer.echo(f"ifinjected: {redactor.text(sandboxed.problem)}", err=True)
+        raise typer.Exit(ExitCode.CONTEXT_UNAVAILABLE)
+    rows, findings = judge(snapshot, Agent.CODEX, direct, sandboxed, connect)
+    typer.echo("Codex: opened directly / inside codex sandbox")
+    for row in rows:
+        line = f"  {_opened(row.direct):<8} {_opened(row.sandboxed):<8} {row.title}  {row.path}"
+        typer.echo(redactor.text(line))
+    if connect is not None:
+        state = "connected" if sandboxed.connect == 0 else "refused"
+        typer.echo(f"  network: {state} to {target} from inside the sandbox")
+    typer.echo("")
+    proven = sum(1 for f in findings if f.id == "IFJ-PROVE-002")
+    if proven:
+        typer.echo(
+            f"WARN  IFJ-PROVE-002  Proven: Codex's sandbox opens {proven} credential file(s) above"
+        )
+    for finding in findings:
+        if finding.id != "IFJ-PROVE-002":
+            text = f"{finding.status.value.upper():<5} {finding.id}  {finding.summary}"
+            typer.echo(redactor.text(text))
+    if not findings:
+        typer.echo("No claim was contradicted, and nothing reachable was opened.")
+
+
+def _opened(code: int | None) -> str:
+    return "-" if code is None else "opened" if code == 0 else "refused"
+
+
 class PlanFormat(StrEnum):
     TEXT = "text"
     JSON = "json"

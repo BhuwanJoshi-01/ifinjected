@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from ifinjected import diffing
+from ifinjected.prove import verdicts as prove
 from ifinjected.rules import flow, posture, read, secret
 from ifinjected.rules.engine import Rule
 
@@ -15,6 +16,7 @@ def builtin_rules() -> tuple[Rule, ...]:
         *secret.registry,
         *flow_rest(),
         *diffing.registry,
+        *prove.registry,
     )
     ids = [rule.id for rule in rules]
     if len(ids) != len(set(ids)):
