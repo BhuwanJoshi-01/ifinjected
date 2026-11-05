@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from ifinjected.homes import Platform, System
-from tests import canaries
+from tests import canaries, keys
 
 
 @dataclass
@@ -68,15 +68,8 @@ class FakeMachine:
 
     def add_credentials(self) -> None:
         """A machine with one of everything a developer typically has lying around."""
-        self.write(
-            ".ssh/id_ed25519",
-            "-----BEGIN OPENSSH PRIVATE KEY-----\n"
-            f"{canaries.SSH_KEY_BODY}\n"
-            "-----END OPENSSH PRIVATE KEY-----\n",
-        )
-        self.write(
-            ".ssh/id_ed25519.pub", f"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA {canaries.USER}@x\n"
-        )
+        self.write(".ssh/id_ed25519", keys.openssh("none"))
+        self.write(".ssh/id_ed25519.pub", keys.PUBLIC_ED25519)
         self.write(
             ".aws/credentials",
             "[default]\n"

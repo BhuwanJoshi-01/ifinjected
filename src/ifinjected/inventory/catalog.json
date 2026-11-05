@@ -1,0 +1,36 @@
+{
+  "retrieved": "2026-11-05",
+  "sources": {
+    "openssh-keygen": {
+      "title": "ssh-keygen(1): key files, passphrases and fingerprints",
+      "url": "https://man.openbsd.org/ssh-keygen"
+    },
+    "openssh-protocol-key": {
+      "title": "OpenSSH PROTOCOL.key: the private key format and its cipher field",
+      "url": "https://github.com/openssh/openssh-portable/blob/master/PROTOCOL.key"
+    },
+    "openssh-ssh": {
+      "title": "ssh(1): FILES, the default identity files in ~/.ssh",
+      "url": "https://man.openbsd.org/ssh#FILES"
+    }
+  },
+  "items": [
+    {
+      "id": "ssh.key",
+      "title": "SSH private key",
+      "why": "Logs in to every server and pushes to every Git host that trusts the key. Without a passphrase, the file alone is enough.",
+      "level": "head",
+      "head_bytes": 192,
+      "paths": [{"base": "home", "glob": ".ssh"}, {"base": "home", "glob": ".ssh/*"}],
+      "sources": ["openssh-ssh", "openssh-protocol-key"]
+    },
+    {
+      "id": "ssh.public",
+      "title": "SSH public key",
+      "why": "Public. Read to name the private key next to it by its type and fingerprint.",
+      "level": "full",
+      "paths": [{"base": "home", "glob": ".ssh/*.pub"}],
+      "sources": ["openssh-keygen"]
+    }
+  ]
+}
