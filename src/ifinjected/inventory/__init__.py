@@ -8,6 +8,7 @@ from ifinjected.inventory.agent_files import collect_agent_files
 from ifinjected.inventory.base import Collected, Context
 from ifinjected.inventory.cloud import collect_cloud
 from ifinjected.inventory.containers import collect_containers
+from ifinjected.inventory.environment import collect_environment
 from ifinjected.inventory.ssh import collect_ssh_keys
 from ifinjected.inventory.tools import collect_tools
 from ifinjected.inventory.vcs import collect_vcs
@@ -21,6 +22,7 @@ COLLECTORS: tuple[Collector, ...] = (
     collect_containers,
     collect_tools,
     collect_agent_files,
+    collect_environment,
 )
 """Every collector, in report order."""
 

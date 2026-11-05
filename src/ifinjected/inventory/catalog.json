@@ -128,6 +128,22 @@
     "dotenv": {
       "title": "dotenv: .env files hold environment-specific secrets and are not committed",
       "url": "https://github.com/motdotla/dotenv#readme"
+    },
+    "ssh-agent": {
+      "title": "ssh-agent(1): holds private keys and signs on behalf of clients of SSH_AUTH_SOCK",
+      "url": "https://man.openbsd.org/ssh-agent"
+    },
+    "docker-socket": {
+      "title": "Docker: the docker group grants privileges equivalent to root",
+      "url": "https://docs.docker.com/engine/security/#docker-daemon-attack-surface"
+    },
+    "gpg-agent": {
+      "title": "GnuPG: gpg-agent caches passphrases and decrypts for its clients",
+      "url": "https://www.gnupg.org/documentation/manuals/gnupg/Invoking-GPG_002dAGENT.html"
+    },
+    "google-adc-env": {
+      "title": "Google Cloud: GOOGLE_APPLICATION_CREDENTIALS names a credential file",
+      "url": "https://cloud.google.com/docs/authentication/application-default-credentials#GAC"
     }
   },
   "items": [
@@ -650,6 +666,82 @@
       ],
       "sources": [
         "dotenv"
+      ]
+    },
+    {
+      "id": "env.variables",
+      "title": "Secret-looking environment variables",
+      "why": "Inherited by every process the agent starts; one `env` command prints them all.",
+      "level": "stat",
+      "paths": [
+        {
+          "base": "env:GOOGLE_APPLICATION_CREDENTIALS",
+          "glob": "."
+        }
+      ],
+      "sources": [
+        "google-adc-env"
+      ]
+    },
+    {
+      "id": "socket.ssh_agent",
+      "title": "ssh-agent socket",
+      "why": "Signs with every loaded key: log in and push as you without ever reading a key file.",
+      "level": "stat",
+      "paths": [
+        {
+          "base": "env:SSH_AUTH_SOCK",
+          "glob": "."
+        }
+      ],
+      "sources": [
+        "ssh-agent"
+      ]
+    },
+    {
+      "id": "socket.docker",
+      "title": "Docker socket",
+      "why": "Whoever can write to it can start a container that mounts the whole disk: root on the machine.",
+      "level": "stat",
+      "paths": [
+        {
+          "base": "root",
+          "glob": "var/run/docker.sock"
+        },
+        {
+          "base": "root",
+          "glob": "run/docker.sock"
+        },
+        {
+          "base": "home",
+          "glob": ".docker/run/docker.sock"
+        },
+        {
+          "base": "docker_host",
+          "glob": "."
+        }
+      ],
+      "sources": [
+        "docker-socket"
+      ]
+    },
+    {
+      "id": "socket.gpg_agent",
+      "title": "gpg-agent socket",
+      "why": "Decrypts and signs for any client while a passphrase is cached.",
+      "level": "stat",
+      "paths": [
+        {
+          "base": "home",
+          "glob": ".gnupg/S.gpg-agent"
+        },
+        {
+          "base": "env:XDG_RUNTIME_DIR",
+          "glob": "gnupg/S.gpg-agent"
+        }
+      ],
+      "sources": [
+        "gpg-agent"
       ]
     }
   ]

@@ -111,7 +111,7 @@ _REDACTED_KEY = "<redacted-private-key>"
 _BEARER = re.compile(r"(?i)\b(bearer\s+)[A-Za-z0-9._~+/=-]{8,}")
 
 
-def _is_secret_name(name: str) -> bool:
+def is_secret_name(name: str) -> bool:
     """``HF_TOKEN``, ``accessToken``, ``DB_PASSWORD``, ``OPENAI_API_KEY``: yes.
     ``tokenizers``, ``CUDA_HOME``, ``author``, ``KEYBOARD``: no."""
     if _SESSION_NAMES.match(name):
@@ -239,7 +239,7 @@ class Redactor:
             value = _VALUE.match(text, pos)
             if (
                 value is not None
-                and _is_secret_name(match.group(1))
+                and is_secret_name(match.group(1))
                 and not value.group(0).startswith("<redacted")
             ):
                 parts.append(_REDACTED)
