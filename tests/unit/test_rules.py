@@ -175,3 +175,12 @@ def test_every_finding_code_is_a_registered_rule(tmp_path: Path) -> None:
     for finding in _diagnosed(machine).findings:
         assert finding.id in registered
         assert re.fullmatch(r"IFJ-[A-Z]+-\d{3}", finding.id)
+
+
+def test_docs_cli_md_is_generated_from_the_command_line() -> None:
+    from ifinjected.clidocs import render_cli_markdown
+
+    cli_doc = Path(__file__).parents[2] / "docs" / "cli.md"
+    assert cli_doc.read_text(encoding="utf-8") == render_cli_markdown(), (
+        "run: uv run python -m ifinjected.clidocs"
+    )
