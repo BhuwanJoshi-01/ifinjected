@@ -210,6 +210,89 @@ class ProbeFailure:
     detail: str
 
 
+class PolicyLevel(StrEnum):
+    """What a family of findings means for ``--strict``.
+
+    ``allow`` reports a problem as information, ``warn`` as a warning, ``deny`` as a
+    failure, which makes ``--strict`` exit with 1.
+    """
+
+    ALLOW = "allow"
+    WARN = "warn"
+    DENY = "deny"
+
+
+class Family(StrEnum):
+    """Rule families: the middle part of a finding code (``IFJ-READ-003``)."""
+
+    POSTURE = "POSTURE"
+    """How an agent is set up: approvals, sandbox, trust, bypass modes."""
+    READ = "READ"
+    """What an agent can read, and around which rules."""
+    SECRET = "SECRET"  # noqa: S105 - a family name, not a password
+    """Credentials on this machine, whichever agent might read them."""
+    INPUT = "INPUT"
+    """Untrusted content an agent takes in (web pages, issues, mail)."""
+    EXFIL = "EXFIL"
+    """Ways data could leave: network, fetches, MCP sinks, publishing."""
+    MCP = "MCP"
+    HOOK = "HOOK"
+    TRIFECTA = "TRIFECTA"
+    """Private data, untrusted input and a way out, in one agent."""
+    PROVE = "PROVE"
+    DIFF = "DIFF"
+    """A change to committed agent configuration that widens what agents may do."""
+    CONFIG = "CONFIG"
+    """Configuration that could not be read or understood."""
+
+    @property
+    def policy_key(self) -> str:
+        return self.value.lower()
+
+
+DEFAULT_LEVELS: dict[Family, PolicyLevel] = {
+    Family.POSTURE: PolicyLevel.WARN,
+    Family.READ: PolicyLevel.DENY,
+    Family.SECRET: PolicyLevel.WARN,
+    Family.INPUT: PolicyLevel.WARN,
+    Family.EXFIL: PolicyLevel.WARN,
+    Family.MCP: PolicyLevel.WARN,
+    Family.HOOK: PolicyLevel.WARN,
+    Family.TRIFECTA: PolicyLevel.DENY,
+    Family.PROVE: PolicyLevel.DENY,
+    Family.DIFF: PolicyLevel.DENY,
+    Family.CONFIG: PolicyLevel.WARN,
+}
+"""Reachable credentials, full trifectas, contradicted sandboxes and widening changes fail
+``--strict`` by default; everything else warns."""
+
+
+@dataclass(frozen=True, slots=True)
+class Policy:
+    """The effective policy: built-in defaults, then the workspace's file, then flags.
+
+    ``agents`` limits the scan to some agents (empty: every agent found). ``deep``
+    parses credential files for their structure (profile and host names, never values);
+    ``include_env`` lists the variable names in ``.env`` files. ``accept_items`` are
+    catalog ids, ``accept_mcp_servers`` server names and ``accept_hosts`` network
+    destinations the user knowingly accepts; findings about them pass, with a note.
+    ``source`` is the policy file that was read, ``None`` for the defaults alone.
+    """
+
+    agents: tuple[AgentId, ...] = ()
+    deep: bool = False
+    include_env: bool = False
+    max_file_bytes: int = 1_048_576
+    levels: tuple[tuple[Family, PolicyLevel], ...] = tuple(DEFAULT_LEVELS.items())
+    accept_items: tuple[str, ...] = ()
+    accept_mcp_servers: tuple[str, ...] = ()
+    accept_hosts: tuple[str, ...] = ()
+    source: str | None = None
+
+    def level(self, family: Family) -> PolicyLevel:
+        return dict(self.levels).get(family, DEFAULT_LEVELS[family])
+
+
 @dataclass(frozen=True, slots=True)
 class RedactionCount:
     """How many values of one kind (``home_path``, ``secret_value``…) were redacted."""
