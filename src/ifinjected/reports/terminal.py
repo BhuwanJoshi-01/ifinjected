@@ -127,6 +127,7 @@ _FACT_LABELS = {
     "inline_registries": "inline",
     "credentials": "holds",
     "plugins": "uses",
+    "variables": "names",
 }
 
 

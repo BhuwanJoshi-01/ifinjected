@@ -21,8 +21,8 @@ from ifinjected.homes import Platform
 
 _BASES = (
     "home", "xdg_config", "xdg_data", "appdata", "gcloud", "azure", "gh", "cargo", "docker",
-    "kubeconfig", "huggingface", "chromium", "firefox", "env_dirs", "workspace",
-    "workspace_parents",
+    "kubeconfig", "huggingface", "chromium", "firefox", "env_dirs", "root", "docker_host",
+    "workspace", "workspace_parents",
 )  # fmt: skip
 """Also ``env:NAME``: the path in environment variable NAME (glob ``.`` for the path itself),
 and ``agent_role:ROLE``: every agent's user-scope location with that role."""
@@ -111,6 +111,7 @@ def _base_dirs(base: str, platform: Platform, workspace: Path | None) -> list[Pa
     from ifinjected.inventory.agent_files import agent_role_paths, env_directories
     from ifinjected.inventory.cloud import azure_dir, gcloud_dir
     from ifinjected.inventory.containers import docker_config_file, kubeconfig_files
+    from ifinjected.inventory.environment import docker_sockets
     from ifinjected.inventory.tools import (
         chromium_user_data_dirs,
         firefox_profiles_dir,
@@ -143,6 +144,8 @@ def _base_dirs(base: str, platform: Platform, workspace: Path | None) -> list[Pa
         "huggingface": lambda: [huggingface_token_file(platform)],
         "chromium": lambda: [d for _, d in chromium_user_data_dirs(platform)],
         "firefox": lambda: [firefox_profiles_dir(platform)],
+        "root": lambda: [platform.root],
+        "docker_host": lambda: docker_sockets(platform)[:1],
     }
     if base in resolvers:
         return resolvers[base]()
