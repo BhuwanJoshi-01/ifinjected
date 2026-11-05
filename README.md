@@ -66,6 +66,34 @@ uv run python examples/messy-laptop/build.py /tmp/messy
 HOME=/tmp/messy/home/dev ifinjected --workspace /tmp/messy/home/dev/src/app
 ```
 
+## In CI: catch pull requests that widen agent permissions
+
+A repository is the easiest place to plant agent configuration: one pull request that adds an MCP server, an allow
+rule or a hook to `.claude/settings.json`, `.mcp.json`, `.codex/config.toml`, `.cursor/` or `opencode.json` changes
+what every agent working in it may do. `ifinjected diff` compares that configuration between two refs:
+
+```yaml
+# .github/workflows/agents.yml
+on: pull_request
+permissions:
+  contents: read
+  security-events: write
+jobs:
+  ifinjected:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: BhuwanJoshi-01/ifinjected@v0.1.0
+        id: ifinjected
+      - uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: ${{ steps.ifinjected.outputs.sarif }}
+```
+
+The step fails when a change fails the repository's [policy](docs/policy.md), and the SARIF upload annotates the line
+that widened it. Locally: `ifinjected diff --base origin/main`.
+
 ## What it checks
 
 | Agent | Configuration it reads | What decides reach |
