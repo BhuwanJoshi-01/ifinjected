@@ -20,8 +20,8 @@ from ifinjected.files import Level
 from ifinjected.homes import Platform
 
 _BASES = (
-    "home", "xdg_config", "xdg_data", "appdata", "gcloud", "azure",
-    "workspace", "workspace_parents",
+    "home", "xdg_config", "xdg_data", "appdata", "gcloud", "azure", "gh", "cargo", "docker",
+    "kubeconfig", "workspace", "workspace_parents",
 )  # fmt: skip
 """Also ``env:NAME``: the path in environment variable NAME (glob ``.`` for the path itself)."""
 
@@ -93,14 +93,22 @@ class Catalog:
 def _base_dirs(base: str, platform: Platform, workspace: Path | None) -> list[Path]:
     # Imported here: the collectors import the catalog, and these resolvers live with them.
     from ifinjected.inventory.cloud import azure_dir, gcloud_dir
+    from ifinjected.inventory.containers import docker_config_file, kubeconfig_files
+    from ifinjected.inventory.vcs import cargo_home, gh_config_dir
 
     if base.startswith("env:"):
         value = platform._env_path(base.removeprefix("env:"))
         return [value] if value is not None else []
-    if base == "gcloud":
-        return [gcloud_dir(platform)]
-    if base == "azure":
-        return [azure_dir(platform)]
+    resolvers = {
+        "gcloud": lambda: [gcloud_dir(platform)],
+        "azure": lambda: [azure_dir(platform)],
+        "gh": lambda: [gh_config_dir(platform)],
+        "cargo": lambda: [cargo_home(platform)],
+        "docker": lambda: [docker_config_file(platform).parent],
+        "kubeconfig": lambda: kubeconfig_files(platform),
+    }
+    if base in resolvers:
+        return resolvers[base]()
     if base == "home":
         return [platform.home]
     if base == "xdg_config":

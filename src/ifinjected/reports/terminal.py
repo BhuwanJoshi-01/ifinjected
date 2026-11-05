@@ -109,20 +109,42 @@ def render_policy(policy: Policy, workspace: str, console: Console) -> None:
     )
 
 
+_FACT_LABELS = {
+    "key_type": None,
+    "fingerprint": None,
+    "profiles": "profiles",
+    "static_keys": "static keys",
+    "temporary_keys": "temporary keys",
+    "sso": "SSO",
+    "process": "credential process",
+    "type": "type",
+    "hosts": "hosts",
+    "machines": "machines",
+    "registries": "registries",
+    "repositories": "repositories",
+    "credential_store": "credential store",
+    "credential_helpers": "helpers",
+    "inline_registries": "inline",
+    "credentials": "holds",
+    "plugins": "uses",
+}
+
+
 def _item_detail(item: SensitiveItem) -> str:
-    """The facts of an item worth a column: key type and fingerprint, profiles, hosts."""
+    """The facts of an item worth showing: key type and fingerprint, profiles, hosts."""
     parts = []
-    for key in ("key_type", "fingerprint"):
-        value = item.fact(key)
-        if value:
-            parts.append(value)
+    for fact in item.facts:
+        if fact.key not in _FACT_LABELS or not fact.value:
+            continue
+        label = _FACT_LABELS[fact.key]
+        parts.append(fact.value if label is None else f"{label}: {fact.value}")
     if item.readable_by_others:
         parts.append("readable by other users")
-    return "  ".join(parts)
+    return " · ".join(parts)
 
 
 def render_inventory(snapshot: Snapshot, console: Console) -> None:
-    """The sensitive items on this machine, most severe first, grouped by kind."""
+    """The sensitive items on this machine, most severe first: what, then where."""
     console.print(Text("Sensitive items on this machine", style="bold"))
     console.print(
         Text("Found by name and file header only: no credential value was read.", style="dim")
@@ -130,27 +152,30 @@ def render_inventory(snapshot: Snapshot, console: Console) -> None:
     console.print()
     if not snapshot.items:
         console.print(Text("None of the known kinds of credentials were found."))
-    else:
-        order = list(Severity)[::-1]
-        items = sorted(snapshot.items, key=lambda i: (order.index(i.severity), i.id, i.path))
-        table = Table(box=None, show_edge=False, pad_edge=False, header_style="bold")
-        table.add_column("Risk", no_wrap=True)
-        table.add_column("What", no_wrap=True)
-        table.add_column("Where", overflow="fold")
-        table.add_column("Details", overflow="fold", style="dim")
-        for item in items:
-            table.add_row(
-                Text(item.severity.value.upper(), style=_SEVERITY_STYLE[item.severity]),
-                Text(item.title),
-                Text(display_path(item.path)),
-                Text(_item_detail(item)),
-            )
-        console.print(table)
+    order = list(Severity)[::-1]
+    items = sorted(snapshot.items, key=lambda i: (order.index(i.severity), i.id, i.path))
+    for item in items:
+        heading = Text()
+        heading.append(f"{item.severity.value.upper():<7}", style=_SEVERITY_STYLE[item.severity])
+        heading.append(item.title)
+        console.print(heading)
+        where = Text("       ")
+        where.append(display_path(item.path))
+        detail = _item_detail(item)
+        if detail:
+            where.append(f"  {detail}", style="dim")
+        console.print(where)
     for skipped in snapshot.skipped:
         console.print(
             Text(f"Not read: {display_path(skipped.path)} {skipped.reason}", style="yellow")
         )
-    line = redaction_line(snapshot)
-    if line:
+    counts = Text()
+    by_severity = [sum(1 for i in snapshot.items if i.severity is s) for s in order]
+    if snapshot.items:
         console.print()
-        console.print(Text(line, style="dim"))
+        summary = ", ".join(f"{n} {s.value}" for n, s in zip(by_severity, order, strict=True) if n)
+        counts.append(f"{len(snapshot.items)} items: {summary}")
+        console.print(counts)
+    redacted = redaction_line(snapshot)
+    if redacted:
+        console.print(Text(redacted, style="dim"))
