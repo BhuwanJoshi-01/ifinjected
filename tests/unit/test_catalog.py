@@ -71,3 +71,12 @@ def test_a_malformed_catalog_is_rejected(change: Any, message: str) -> None:
     change(data)
     with pytest.raises(CatalogError, match=message):
         parse_catalog(data)
+
+
+def test_docs_what_is_read_md_is_generated_from_the_catalog() -> None:
+    from ifinjected.inventory.docs import render_what_is_read
+
+    path = Path(__file__).parents[2] / "docs" / "what-is-read.md"
+    assert path.read_text(encoding="utf-8") == render_what_is_read(), (
+        "run: uv run python -m ifinjected.inventory.docs"
+    )

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
 
+from ifinjected.inventory.environment import ENVIRONMENT
 from ifinjected.models import Confidence, Finding, SensitiveItem, Severity, Snapshot, Status
 from ifinjected.rules.engine import Registry
 from ifinjected.rules.shared import item_evidence, item_source
@@ -35,7 +36,7 @@ def _finding(rule_id: str, item: SensitiveItem, action: str, why: str) -> Findin
         Status.WARN,
         item.severity,
         Confidence.HIGH,
-        f"{item.title} at {item.path}",
+        item.title if item.path == ENVIRONMENT else f"{item.title} at {item.path}",
         why or "Any process running as you, an injected agent included, can use it.",
         item=item.id,
         sources=item_source(item),
