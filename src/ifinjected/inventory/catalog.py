@@ -19,7 +19,11 @@ from typing import Any
 from ifinjected.files import Level
 from ifinjected.homes import Platform
 
-_BASES = ("home", "xdg_config", "xdg_data", "appdata", "workspace", "workspace_parents")
+_BASES = (
+    "home", "xdg_config", "xdg_data", "appdata", "gcloud", "azure",
+    "workspace", "workspace_parents",
+)  # fmt: skip
+"""Also ``env:NAME``: the path in environment variable NAME (glob ``.`` for the path itself)."""
 
 
 class CatalogError(ValueError):
@@ -51,6 +55,11 @@ class Entry:
     paths: tuple[PathPattern, ...]
     sources: tuple[Source, ...]
     head_bytes: int | None = None
+    deep_level: Level | None = None
+    """The level with ``--deep``; ``None`` when ``--deep`` reads nothing more."""
+
+    def level_for(self, deep: bool) -> Level:
+        return self.deep_level if deep and self.deep_level is not None else self.level
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,22 +74,33 @@ class Catalog:
         raise KeyError(item_id)
 
     def declared_level(
-        self, path: Path, platform: Platform, workspace: Path | None
+        self, path: Path, platform: Platform, workspace: Path | None, *, deep: bool = False
     ) -> Level | None:
         """The deepest level any entry allows for ``path``, or ``None`` if none declares it."""
         order = list(Level)
         found: Level | None = None
         for entry in self.entries:
+            level = entry.level_for(deep)
             for pattern in entry.paths:
                 for base in _base_dirs(pattern.base, platform, workspace):
                     if _matches(path, base, pattern.glob) and (
-                        found is None or order.index(entry.level) > order.index(found)
+                        found is None or order.index(level) > order.index(found)
                     ):
-                        found = entry.level
+                        found = level
         return found
 
 
 def _base_dirs(base: str, platform: Platform, workspace: Path | None) -> list[Path]:
+    # Imported here: the collectors import the catalog, and these resolvers live with them.
+    from ifinjected.inventory.cloud import azure_dir, gcloud_dir
+
+    if base.startswith("env:"):
+        value = platform._env_path(base.removeprefix("env:"))
+        return [value] if value is not None else []
+    if base == "gcloud":
+        return [gcloud_dir(platform)]
+    if base == "azure":
+        return [azure_dir(platform)]
     if base == "home":
         return [platform.home]
     if base == "xdg_config":
@@ -132,12 +152,13 @@ def parse_catalog(data: dict[str, Any]) -> Catalog:
         if unknown:
             raise CatalogError(f"{item['id']} cites unknown sources {unknown}")
         level = Level(item["level"])
+        deep_level = Level(item["deep_level"]) if "deep_level" in item else None
         head_bytes = item.get("head_bytes")
         if (level is Level.HEAD) != (head_bytes is not None):
             raise CatalogError(f"{item['id']}: head_bytes is required for head and only for head")
         patterns = tuple(PathPattern(p["base"], p["glob"]) for p in item["paths"])
         for pattern in patterns:
-            if pattern.base not in _BASES:
+            if pattern.base not in _BASES and not pattern.base.startswith("env:"):
                 raise CatalogError(f"{item['id']}: unknown base {pattern.base}")
         entries.append(
             Entry(
@@ -148,6 +169,7 @@ def parse_catalog(data: dict[str, Any]) -> Catalog:
                 paths=patterns,
                 sources=tuple(sources[s] for s in item["sources"]),
                 head_bytes=head_bytes,
+                deep_level=deep_level,
             )
         )
     return Catalog(retrieved=data["retrieved"], entries=tuple(entries))
