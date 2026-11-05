@@ -12,6 +12,7 @@ from ifinjected.policy.exposure import Exposure
 from ifinjected.policy.model import Channel, ChannelPolicy, Gate
 from ifinjected.reports.terminal import display_path, redaction_line
 from ifinjected.trifecta.classify import classify
+from ifinjected.trifecta.verdict import Trifecta
 
 _GATE_TEXT = {
     Gate.NONE: "no approval",
@@ -182,6 +183,38 @@ def render_exposures(
         console.print(detail)
 
 
+_GRADE_STYLE = {"A": "bold green", "B": "green", "C": "yellow", "D": "bold red", "F": "bold red"}
+_VERDICT_TEXT = {
+    "full_ungated": "full lethal trifecta, and nobody has to approve it",
+    "full_gated": "full lethal trifecta, behind an approval",
+    "two_legs": "two of three legs: one change away",
+    "contained": "contained",
+}
+
+
+def render_trifecta(trifecta: Trifecta, console: Console) -> None:
+    line = Text("  Lethal trifecta  ", style="bold")
+    line.append(f" {trifecta.grade.value} ", style=f"reverse {_GRADE_STYLE[trifecta.grade.value]}")
+    line.append(f"  {_VERDICT_TEXT[trifecta.verdict.value]}")
+    console.print(line)
+    for name, leg in (
+        ("private data", trifecta.private),
+        ("untrusted input", trifecta.input),
+        ("a way out", trifecta.exfil),
+    ):
+        member = leg.easiest
+        row = Text(f"    {name:<18}")
+        if member is None:
+            row.append("closed", style="green")
+        else:
+            row.append(_GATE_TEXT[member.gate], style=_GATE_STYLE[member.gate])
+            row.append(f" · {member.what}", style="dim")
+            more = sum(1 for m in leg.members if m.gate.opens) - 1
+            if more > 0:
+                row.append(f" (+{more} more)", style="dim")
+        console.print(row)
+
+
 def render_agents(snapshot: Snapshot, console: Console) -> None:
     if not snapshot.agents:
         console.print(Text("No supported coding agent was found on this machine."))
@@ -190,6 +223,9 @@ def render_agents(snapshot: Snapshot, console: Console) -> None:
         if index:
             console.print()
         render_agent(report, console)
+        for trifecta in snapshot.trifectas:
+            if trifecta.agent is report.agent:
+                render_trifecta(trifecta, console)
         render_exposures([e for e in snapshot.exposures if e.agent is report.agent], items, console)
     line = redaction_line(snapshot)
     if line:
