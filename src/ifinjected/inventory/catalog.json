@@ -156,6 +156,10 @@
     "codex-config": {
       "title": "Codex: configuration reference (profile files next to config.toml)",
       "url": "https://learn.chatgpt.com/docs/config-file/config-reference"
+    },
+    "gemini-policy": {
+      "title": "Gemini CLI: policy engine (policies/*.toml)",
+      "url": "https://github.com/google-gemini/gemini-cli/blob/main/docs/reference/policy-engine.md"
     }
   },
   "items": [
@@ -777,11 +781,16 @@
         {
           "base": "agent_config_dir",
           "glob": "*.config.toml"
+        },
+        {
+          "base": "agent_config_dir",
+          "glob": "*.toml"
         }
       ],
       "sources": [
         "claude-settings",
-        "codex-config"
+        "codex-config",
+        "gemini-policy"
       ]
     },
     {

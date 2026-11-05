@@ -30,6 +30,9 @@ CLAUDE_DOCS = "https://code.claude.com/docs/en/permissions"
 SANDBOX_DOCS = "https://code.claude.com/docs/en/sandboxing"
 _SERIOUS = {Severity.HIGH, Severity.MEDIUM}
 _TRANSCRIPTS = "agent.transcripts"
+_SOCKETS = frozenset({"socket.ssh_agent", "socket.docker", "socket.gpg_agent"})
+_NOT_READ = _SOCKETS | {_TRANSCRIPTS}
+"""Sockets are used, not read (IFJ-SECRET-011); transcripts have their own rule."""
 
 
 @registry.rule("IFJ-READ-001", "A credential is readable without approval", sources=(CLAUDE_DOCS,))
@@ -42,10 +45,12 @@ def without_approval(snapshot: Snapshot) -> Iterator[Finding]:
     for report in agents_found(snapshot):
         for exposure in exposures_of(snapshot, report.agent):
             item = item_of(snapshot, exposure)
-            if exposure.reach is not Reach.NO_APPROVAL or item is None or item.id == _TRANSCRIPTS:
+            if exposure.reach is not Reach.NO_APPROVAL or item is None or item.id in _NOT_READ:
                 continue
             if item.severity not in _SERIOUS:
                 continue
+            if exposure.sandboxed and item.path != ENVIRONMENT and item.severity is Severity.HIGH:
+                continue  # reported as the sandbox reading it (IFJ-READ-004)
             yield Finding(
                 "IFJ-READ-001",
                 Status.FAIL,
@@ -165,6 +170,8 @@ def sandbox_reads(snapshot: Snapshot) -> Iterator[Finding]:
         for exposure in exposures_of(snapshot, report.agent):
             item = item_of(snapshot, exposure)
             if item is None or not exposure.sandboxed or not exposure.reach.reachable:
+                continue
+            if item.id in _NOT_READ:
                 continue
             if item.severity is not Severity.HIGH or exposure.path.startswith("environment"):
                 continue
