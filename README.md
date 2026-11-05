@@ -3,6 +3,8 @@
 **If a coding agent on your machine got prompt-injected right now, what could it reach?**
 
 [![CI](https://github.com/BhuwanJoshi-01/ifinjected/actions/workflows/ci.yml/badge.svg)](https://github.com/BhuwanJoshi-01/ifinjected/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/ifinjected)](https://pypi.org/project/ifinjected/)
+[![Python](https://img.shields.io/pypi/pyversions/ifinjected)](https://pypi.org/project/ifinjected/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 [Website](https://bhuwanjoshi-01.github.io/ifinjected/) · [Every rule](docs/rules.md) · [Every command](docs/cli.md) · [What is read](docs/what-is-read.md)

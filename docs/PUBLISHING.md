@@ -28,7 +28,8 @@
 
 4. Publishing the release runs `release.yml`: it checks the tag matches the version, builds the sdist and wheel,
    attaches them to the release and uploads them to PyPI.
-5. Check the result in a fresh environment:
+5. The `PyPI` workflow then installs the release from PyPI on Linux, macOS and Windows and runs it (it also runs
+   weekly). To check by hand, in a fresh environment:
 
    ```bash
    uv tool install ifinjected==X.Y.Z && ifinjected --version
