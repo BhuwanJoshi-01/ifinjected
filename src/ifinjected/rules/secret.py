@@ -35,7 +35,7 @@ def _finding(rule_id: str, item: SensitiveItem, action: str, why: str) -> Findin
         Status.WARN,
         item.severity,
         Confidence.HIGH,
-        f"{item.title}: {item.path}",
+        f"{item.title} at {item.path}",
         why or "Any process running as you, an injected agent included, can use it.",
         item=item.id,
         sources=item_source(item),

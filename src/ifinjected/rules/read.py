@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 
+from ifinjected.inventory.environment import ENVIRONMENT
 from ifinjected.models import (
     Confidence,
     Evidence,
@@ -51,13 +52,22 @@ def without_approval(snapshot: Snapshot) -> Iterator[Finding]:
                 item.severity,
                 Confidence.MEDIUM if exposure.uncertain else Confidence.HIGH,
                 f"{report.agent.display_name} can read {item.title} without approval",
-                f"{item.path} is reachable {how(exposure)}.",
+                (
+                    f"Every command the agent runs inherits it: reachable {how(exposure)}."
+                    if item.path == ENVIRONMENT
+                    else f"{item.path} is reachable {how(exposure)}."
+                ),
                 agent=report.agent,
                 item=item.id,
                 sources=item_source(item),
                 evidence=item_evidence(item),
-                recommended_action="Deny it in the agent's rules and enable the sandbox with the "
-                "same path in sandbox.filesystem.denyRead, or move it out of the home directory.",
+                recommended_action=(
+                    "Start the agent without these variables, or have its sandbox strip them "
+                    "(Claude Code: sandbox credentials.envVars with mode deny)."
+                    if item.path == ENVIRONMENT
+                    else "Deny it in the agent's rules and enable the sandbox with the same path "
+                    "in sandbox.filesystem.denyRead, or move it out of the home directory."
+                ),
                 verify_command="ifinjected scan",
                 limitations=("Uncertain: part of the configuration could not be decided.",)
                 if exposure.uncertain
