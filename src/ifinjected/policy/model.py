@@ -138,3 +138,8 @@ class EffectivePolicy:
     precedence: Precedence = Precedence.DENY_FIRST
     sandbox: SandboxPolicy = field(default_factory=SandboxPolicy)
     unknowns: tuple[str, ...] = ()
+    web_fetch: Gate | None = None
+    """The gate of the agent's own web fetch tool; ``None`` when it has none."""
+    web_search: Gate | None = None
+    mcp_gates: tuple[tuple[str, Gate], ...] = ()
+    """Every enabled MCP server by name, with the gate in front of its tools."""

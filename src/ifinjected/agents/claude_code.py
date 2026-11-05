@@ -425,6 +425,24 @@ def _mcp_servers(
     return servers
 
 
+def _tool_gate(tool: str, merged: _Merged, mode: str) -> Gate:
+    """WebFetch and WebSearch ask by default (WebFetch skips a few documentation
+    domains); a bare deny removes them, a bare allow or bypassPermissions opens them."""
+
+    def bare(entries: list[tuple[str, Scope, SourceRef]]) -> bool:
+        return any(rule in {tool, f"{tool}(*)", f"{tool}(domain:*)"} for rule, _, _ in entries)
+
+    if any(rule == tool for rule, _, _ in merged.deny):
+        return Gate.DENIED
+    if mode == "bypassPermissions" or bare(merged.allow):
+        return Gate.NONE
+    if mode == "auto":
+        return Gate.AUTOMATED
+    if mode == "dontAsk":
+        return Gate.DENIED
+    return Gate.HUMAN
+
+
 def _mcp_gate(server: McpServer, merged: _Merged, mode: str) -> Gate:
     """How Claude Code gates calls to a server's tools: deny and allow rules naming
     ``mcp__<server>`` first, then the permission mode (tools ask on first use)."""
@@ -599,8 +617,17 @@ def inspect_claude_code(p: Platform, policy: Policy, workspace: Path | None) -> 
     )
     servers = _mcp_servers(p, workspace, state, merged, project_state, project_key, policy, layers)
     mcp_channels = _mcp_channels(servers, merged, mode)
-    if mcp_channels:
-        effective = replace(effective, channels=(*effective.channels, *mcp_channels))
+    effective = replace(
+        effective,
+        channels=(*effective.channels, *mcp_channels),
+        web_fetch=_tool_gate("WebFetch", merged, mode),
+        web_search=_tool_gate("WebSearch", merged, mode),
+        mcp_gates=tuple(
+            (server.name, _mcp_gate(server, merged, mode))
+            for server in servers
+            if server.approved is not False
+        ),
+    )
     settings: list[tuple[str, str, SourceRef | None]] = [
         ("permission mode", mode, mode_value[2] if mode_value else None)
     ]

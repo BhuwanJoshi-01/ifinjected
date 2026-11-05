@@ -14,6 +14,7 @@ from ifinjected.inventory import collect_inventory
 from ifinjected.inventory.base import Context
 from ifinjected.models import Policy, Snapshot, utc_timestamp
 from ifinjected.policy.exposure import exposures
+from ifinjected.trifecta.verdict import trifectas
 
 
 def inspect_inventory(
@@ -50,6 +51,8 @@ def inspect_all(platform: Platform, policy: Policy, workspace: Path | None = Non
     """The inventory, every agent's policy, and how each agent could reach each item."""
     found = collect_inventory(Context(platform=platform, policy=policy, workspace=workspace))
     agents = inspect_agents(platform, policy, workspace)
+    items = tuple(found.items)
+    exposed = exposures(agents, items)
     return Snapshot(
         tool_version=__version__,
         created_at=utc_timestamp(),
@@ -59,5 +62,6 @@ def inspect_all(platform: Platform, policy: Policy, workspace: Path | None = Non
         items=tuple(found.items),
         skipped=tuple(found.skipped),
         agents=agents,
-        exposures=exposures(agents, tuple(found.items)),
+        exposures=exposed,
+        trifectas=trifectas(agents, exposed, items),
     )
