@@ -56,6 +56,18 @@
     "gemini-trust": {
       "title": "Gemini CLI: trusted folders",
       "url": "https://github.com/google-gemini/gemini-cli/blob/main/docs/cli/trusted-folders.md"
+    },
+    "opencode-permissions": {
+      "title": "opencode: permissions (defaults, pattern maps, last match wins, external_directory)",
+      "url": "https://opencode.ai/docs/permissions/"
+    },
+    "opencode-config": {
+      "title": "opencode: config files and precedence",
+      "url": "https://opencode.ai/docs/config/"
+    },
+    "opencode-mcp": {
+      "title": "opencode: MCP servers",
+      "url": "https://opencode.ai/docs/mcp-servers/"
     }
   },
   "facts": {
@@ -178,6 +190,22 @@
     "gemini.mcp_trust": {
       "text": "mcpServers.<name>.trust: true skips every confirmation for that server's tools.",
       "source": "gemini-config"
+    },
+    "opencode.defaults": {
+      "text": "Most permissions default to allow; doom_loop and external_directory default to ask; read asks for *.env and *.env.* files.",
+      "source": "opencode-permissions"
+    },
+    "opencode.last_match": {
+      "text": "Rules are evaluated by pattern match, with the last matching rule winning.",
+      "source": "opencode-permissions"
+    },
+    "opencode.external": {
+      "text": "external_directory governs tool calls that touch paths outside the working directory, for read, edit, glob, grep and many bash commands.",
+      "source": "opencode-permissions"
+    },
+    "opencode.no_sandbox": {
+      "text": "opencode documents approval prompts and rules, and no OS sandbox; --auto approves every request that is not explicitly denied.",
+      "source": "opencode-permissions"
     }
   }
 }

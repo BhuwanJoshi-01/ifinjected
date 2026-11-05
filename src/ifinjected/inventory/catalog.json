@@ -785,6 +785,10 @@
         {
           "base": "agent_config_dir",
           "glob": "*.toml"
+        },
+        {
+          "base": "agent_config_dir",
+          "glob": "*.jsonc"
         }
       ],
       "sources": [
