@@ -84,6 +84,14 @@
     "cursor-mcp": {
       "title": "Cursor: MCP (mcp.json)",
       "url": "https://cursor.com/docs/context/mcp"
+    },
+    "copilot-config-dir": {
+      "title": "GitHub Copilot CLI: configuration directory reference",
+      "url": "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-config-dir-reference"
+    },
+    "copilot-use": {
+      "title": "GitHub Copilot CLI: using the CLI (approvals, trusted directories, allow-all)",
+      "url": "https://docs.github.com/en/copilot/how-tos/use-copilot-agents/use-copilot-cli"
     }
   },
   "facts": {
@@ -246,6 +254,18 @@
     "cursor.run_everything": {
       "text": "In Run Everything mode every tool call runs automatically, without the sandbox.",
       "source": "cursor-run-modes"
+    },
+    "copilot.files": {
+      "text": "~/.copilot holds settings.json, config.json (trusted folders), permissions-config.json, mcp-config.json and providers.json (provider credentials in plain text); projects add .github/copilot/settings.json, .github/mcp.json, .mcp.json and Claude Code's .claude/settings.json hooks.",
+      "source": "copilot-config-dir"
+    },
+    "copilot.sandbox": {
+      "text": "sandbox.enabled defaults to false; sandbox.allowBypass to true; sandbox.auth.git and sandbox.auth.gh inject credentials into the sandbox by default.",
+      "source": "copilot-config-dir"
+    },
+    "copilot.approvals": {
+      "text": "Copilot CLI asks before running tools and before touching paths outside trusted directories, unless tools are allowed or allow-all is on.",
+      "source": "copilot-use"
     }
   }
 }
