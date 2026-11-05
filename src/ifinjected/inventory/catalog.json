@@ -12,6 +12,26 @@
     "openssh-ssh": {
       "title": "ssh(1): FILES, the default identity files in ~/.ssh",
       "url": "https://man.openbsd.org/ssh#FILES"
+    },
+    "aws-files": {
+      "title": "AWS CLI: configuration and credential file settings",
+      "url": "https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html"
+    },
+    "aws-sso": {
+      "title": "AWS CLI: IAM Identity Center (SSO) token cache",
+      "url": "https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sso.html"
+    },
+    "gcloud-adc": {
+      "title": "Google Cloud: how Application Default Credentials works",
+      "url": "https://cloud.google.com/docs/authentication/application-default-credentials"
+    },
+    "gcloud-config": {
+      "title": "gcloud CLI: managing configurations (CLOUDSDK_CONFIG and the config directory)",
+      "url": "https://cloud.google.com/sdk/docs/configurations"
+    },
+    "azure-cli": {
+      "title": "Azure CLI: sign in, token caching and AZURE_CONFIG_DIR",
+      "url": "https://learn.microsoft.com/en-us/cli/azure/azure-cli-configuration"
     }
   },
   "items": [
@@ -21,16 +41,156 @@
       "why": "Logs in to every server and pushes to every Git host that trusts the key. Without a passphrase, the file alone is enough.",
       "level": "head",
       "head_bytes": 192,
-      "paths": [{"base": "home", "glob": ".ssh"}, {"base": "home", "glob": ".ssh/*"}],
-      "sources": ["openssh-ssh", "openssh-protocol-key"]
+      "paths": [
+        {
+          "base": "home",
+          "glob": ".ssh"
+        },
+        {
+          "base": "home",
+          "glob": ".ssh/*"
+        }
+      ],
+      "sources": [
+        "openssh-ssh",
+        "openssh-protocol-key"
+      ]
     },
     {
       "id": "ssh.public",
       "title": "SSH public key",
       "why": "Public. Read to name the private key next to it by its type and fingerprint.",
       "level": "full",
-      "paths": [{"base": "home", "glob": ".ssh/*.pub"}],
-      "sources": ["openssh-keygen"]
+      "paths": [
+        {
+          "base": "home",
+          "glob": ".ssh/*.pub"
+        }
+      ],
+      "sources": [
+        "openssh-keygen"
+      ]
+    },
+    {
+      "id": "aws.credentials",
+      "title": "AWS credentials file",
+      "why": "Static access keys work from anywhere until someone rotates them.",
+      "level": "stat",
+      "deep_level": "full",
+      "paths": [
+        {
+          "base": "home",
+          "glob": ".aws/credentials"
+        },
+        {
+          "base": "env:AWS_SHARED_CREDENTIALS_FILE",
+          "glob": "."
+        }
+      ],
+      "sources": [
+        "aws-files"
+      ]
+    },
+    {
+      "id": "aws.config",
+      "title": "AWS config",
+      "why": "Can hold access keys too, and names the roles and SSO sessions every profile can use.",
+      "level": "stat",
+      "deep_level": "full",
+      "paths": [
+        {
+          "base": "home",
+          "glob": ".aws/config"
+        },
+        {
+          "base": "env:AWS_CONFIG_FILE",
+          "glob": "."
+        }
+      ],
+      "sources": [
+        "aws-files"
+      ]
+    },
+    {
+      "id": "aws.sso_cache",
+      "title": "AWS cached session tokens",
+      "why": "Short-lived, but valid for hours: enough to copy everything a role can read.",
+      "level": "stat",
+      "paths": [
+        {
+          "base": "home",
+          "glob": ".aws/sso/cache"
+        },
+        {
+          "base": "home",
+          "glob": ".aws/cli/cache"
+        }
+      ],
+      "sources": [
+        "aws-sso"
+      ]
+    },
+    {
+      "id": "gcloud.credentials",
+      "title": "Google Cloud CLI credentials",
+      "why": "Refresh tokens for every account gcloud is signed in to; they do not expire on their own.",
+      "level": "stat",
+      "paths": [
+        {
+          "base": "gcloud",
+          "glob": "credentials.db"
+        },
+        {
+          "base": "gcloud",
+          "glob": "access_tokens.db"
+        },
+        {
+          "base": "gcloud",
+          "glob": "legacy_credentials"
+        }
+      ],
+      "sources": [
+        "gcloud-config"
+      ]
+    },
+    {
+      "id": "gcloud.adc",
+      "title": "Google application default credentials",
+      "why": "Every Google client library on the machine uses this file: a refresh token or a service account key.",
+      "level": "stat",
+      "deep_level": "full",
+      "paths": [
+        {
+          "base": "gcloud",
+          "glob": "application_default_credentials.json"
+        }
+      ],
+      "sources": [
+        "gcloud-adc"
+      ]
+    },
+    {
+      "id": "azure.tokens",
+      "title": "Azure CLI tokens and service principal secrets",
+      "why": "Signed-in sessions, and on Linux service principal secrets in plain JSON.",
+      "level": "stat",
+      "paths": [
+        {
+          "base": "azure",
+          "glob": "msal_token_cache.*"
+        },
+        {
+          "base": "azure",
+          "glob": "accessTokens.json"
+        },
+        {
+          "base": "azure",
+          "glob": "service_principal_entries.*"
+        }
+      ],
+      "sources": [
+        "azure-cli"
+      ]
     }
   ]
 }
