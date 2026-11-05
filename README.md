@@ -5,6 +5,8 @@
 [![CI](https://github.com/BhuwanJoshi-01/ifinjected/actions/workflows/ci.yml/badge.svg)](https://github.com/BhuwanJoshi-01/ifinjected/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+[Website](https://bhuwanjoshi-01.github.io/ifinjected/) · [Every rule](docs/rules.md) · [Every command](docs/cli.md) · [What is read](docs/what-is-read.md)
+
 ![A share card: grade F for the machine; Claude Code F, Codex C and opencode F, each a lethal trifecta; reachable: SSH keys, cloud credentials, agent login tokens](docs/images/card.svg)
 
 One command reads the configuration of **Claude Code, Codex, Gemini CLI, Cursor, opencode and Copilot CLI**, finds
