@@ -158,3 +158,23 @@ def test_the_diff_only_runs_read_only_git(repo: Path) -> None:
     for argv in calls:
         assert argv[:3] == ["git", "-c", "core.fsmonitor=false"]
         assert argv[5] in {"show", "rev-parse"}
+
+
+def test_deleting_a_settings_file_removes_its_deny_rules(repo: Path) -> None:
+    commit(repo, {".claude/settings.json": None})
+    assert [rule for rule, _ in _ids(repo, "HEAD~1")] == ["IFJ-DIFF-002"]
+
+
+def test_a_file_broken_at_head_counts_as_removed(repo: Path) -> None:
+    commit(repo, {".claude/settings.json": '{"permissions": {"deny": ['})
+    assert [rule for rule, _ in _ids(repo, "HEAD~1")] == ["IFJ-DIFF-002"]
+
+
+def test_the_working_tree_is_left_as_it_was(repo: Path) -> None:
+    from tests.gitless import tree_digest
+
+    commit(repo, {".mcp.json": {"mcpServers": {"x": {"command": "x"}}}})
+    (repo / "untracked.txt").write_text("local\n", encoding="utf-8")
+    before = tree_digest(repo)
+    diff_findings(SubprocessRunner(), repo, "HEAD~1", "HEAD")
+    assert tree_digest(repo) == before
