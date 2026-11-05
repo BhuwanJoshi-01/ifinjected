@@ -15,6 +15,6 @@ __pycache__/
 coverage.xml
 htmlcov/
 
-# Reports generated while trying the tool on real repositories
+# Reports and share cards written while trying the tool on a real machine
 /ifinjected-report.*
 /ifinjected-card.*
