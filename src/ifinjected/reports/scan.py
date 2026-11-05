@@ -67,20 +67,36 @@ def _sort_key(finding: Finding) -> tuple[int, int, str]:
     return status, _SEVERITY_ORDER.index(finding.severity), finding.id
 
 
-def _finding(finding: Finding, console: Console) -> None:
+def _finding(group: list[Finding], console: Console) -> None:
+    first = group[0]
     line = Text()
-    line.append(f"{finding.status.value.upper():<5} ", style=_STATUS_STYLE.get(finding.status, ""))
-    line.append(f"{finding.id:<17}", style="bold")
-    line.append(finding.summary)
+    line.append(f"{first.status.value.upper():<5} ", style=_STATUS_STYLE.get(first.status, ""))
+    line.append(f"{first.id:<17}", style="bold")
+    line.append(first.summary)
+    if len(group) > 1:
+        line.append(f" (+{len(group) - 1} more)", style="bold")
     console.print(line)
-    console.print(Text(f"      {finding.reason}", style="dim"))
-    for source in finding.sources[:1]:
+    console.print(Text(f"      {first.reason}", style="dim"))
+    for source in first.sources[:1]:
         if source.line is not None:
             console.print(Text(f"      at {display_path(source.path)}:{source.line}", style="dim"))
-    if finding.recommended_action:
+    if len(group) > 1:
+        others = [f.summary for f in group[1:4]]
+        more = "" if len(group) <= 4 else f", and {len(group) - 4} more"
+        console.print(Text("      also: " + "; ".join(others) + more, style="dim"))
+    if first.recommended_action:
         fix = Text("      fix: ", style="green")
-        fix.append(finding.recommended_action)
+        fix.append(first.recommended_action)
         console.print(fix)
+
+
+def _groups(findings: list[Finding]) -> list[list[Finding]]:
+    """Findings of one rule about one agent, in the order of their first member."""
+    groups: dict[tuple[str, str], list[Finding]] = {}
+    for finding in findings:
+        key = (finding.id, finding.agent.value if finding.agent else "")
+        groups.setdefault(key, []).append(finding)
+    return list(groups.values())
 
 
 def render_scan(snapshot: Snapshot, console: Console, *, show_all: bool = False) -> None:
@@ -109,8 +125,12 @@ def render_scan(snapshot: Snapshot, console: Console, *, show_all: bool = False)
         for finding in problems:
             if finding.status is Status.WARN:
                 folded[finding.id].append(finding)
-    for finding in shown:
-        _finding(finding, console)
+    if show_all:
+        for finding in shown:
+            _finding([finding], console)
+    else:
+        for group in _groups(shown):
+            _finding(group, console)
     if folded:
         if shown:
             console.print()

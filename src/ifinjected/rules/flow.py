@@ -82,7 +82,9 @@ def web_input(snapshot: Snapshot) -> Iterator[Finding]:
                 Status.WARN,
                 Severity.MEDIUM,
                 Confidence.HIGH,
-                f"{report.agent.display_name}'s {' and '.join(open_tools)} run without approval",
+                f"{report.agent.display_name}'s {' and '.join(open_tools)} "
+                + ("runs" if len(open_tools) == 1 else "run")
+                + " without approval",
                 "Web pages anyone can write come into the agent's context unasked.",
                 agent=report.agent,
                 recommended_action="Allow web fetches only for the domains you need "

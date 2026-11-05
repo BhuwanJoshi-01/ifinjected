@@ -32,6 +32,30 @@
     "codex-permissions-source": {
       "title": "openai/codex: codex-rs/protocol/src/permissions.rs (read-only and workspace-write policies start from :root = Read)",
       "url": "https://github.com/openai/codex/blob/main/codex-rs/protocol/src/permissions.rs"
+    },
+    "gemini-config": {
+      "title": "Gemini CLI: configuration reference",
+      "url": "https://github.com/google-gemini/gemini-cli/blob/main/docs/reference/configuration.md"
+    },
+    "gemini-files": {
+      "title": "Gemini CLI: file system tools (rootDirectory)",
+      "url": "https://github.com/google-gemini/gemini-cli/blob/main/docs/tools/file-system.md"
+    },
+    "gemini-shell": {
+      "title": "Gemini CLI: shell tool (tools.core, tools.exclude)",
+      "url": "https://github.com/google-gemini/gemini-cli/blob/main/docs/tools/shell.md"
+    },
+    "gemini-web-fetch": {
+      "title": "Gemini CLI: web_fetch triggers a confirmation dialog",
+      "url": "https://github.com/google-gemini/gemini-cli/blob/main/docs/tools/web-fetch.md"
+    },
+    "gemini-sandbox": {
+      "title": "Gemini CLI: sandboxing (Seatbelt profiles, Docker, Podman)",
+      "url": "https://github.com/google-gemini/gemini-cli/blob/main/docs/cli/sandbox.md"
+    },
+    "gemini-trust": {
+      "title": "Gemini CLI: trusted folders",
+      "url": "https://github.com/google-gemini/gemini-cli/blob/main/docs/cli/trusted-folders.md"
     }
   },
   "facts": {
@@ -130,6 +154,30 @@
     "codex.platforms": {
       "text": "macOS uses Seatbelt, Linux and WSL2 need bubblewrap, native Windows has its own sandbox in PowerShell.",
       "source": "codex-sandboxing"
+    },
+    "gemini.files": {
+      "text": "All file system tools operate within a rootDirectory (the current working directory or workspace root).",
+      "source": "gemini-files"
+    },
+    "gemini.shell": {
+      "text": "run_shell_command can be restricted with tools.core (run_shell_command(git)) and blocked with tools.exclude; chained commands are split and checked part by part.",
+      "source": "gemini-shell"
+    },
+    "gemini.web_fetch": {
+      "text": "web_fetch triggers a confirmation dialog showing the URLs.",
+      "source": "gemini-web-fetch"
+    },
+    "gemini.sandbox": {
+      "text": "Sandboxing is off by default. On macOS the default Seatbelt profile, permissive-open, allows reading files and outbound network; Docker and Podman sandboxes see only what is mounted.",
+      "source": "gemini-sandbox"
+    },
+    "gemini.trust": {
+      "text": "Folder trust is off by default; when on, an untrusted folder's project settings, .env and MCP servers are ignored.",
+      "source": "gemini-trust"
+    },
+    "gemini.mcp_trust": {
+      "text": "mcpServers.<name>.trust: true skips every confirmation for that server's tools.",
+      "source": "gemini-config"
     }
   }
 }
