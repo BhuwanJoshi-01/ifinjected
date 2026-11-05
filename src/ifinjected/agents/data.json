@@ -68,6 +68,22 @@
     "opencode-mcp": {
       "title": "opencode: MCP servers",
       "url": "https://opencode.ai/docs/mcp-servers/"
+    },
+    "cursor-run-modes": {
+      "title": "Cursor: run modes (Auto-review, Allowlist, Run Everything) and Read Access",
+      "url": "https://cursor.com/docs/agent/security/run-modes"
+    },
+    "cursor-sandbox": {
+      "title": "Cursor: sandbox.json reference",
+      "url": "https://cursor.com/docs/reference/sandbox"
+    },
+    "cursor-cli-permissions": {
+      "title": "Cursor CLI: permissions (Shell, Read, Write, WebFetch, Mcp tokens)",
+      "url": "https://cursor.com/docs/cli/reference/permissions"
+    },
+    "cursor-mcp": {
+      "title": "Cursor: MCP (mcp.json)",
+      "url": "https://cursor.com/docs/context/mcp"
     }
   },
   "facts": {
@@ -206,6 +222,30 @@
     "opencode.no_sandbox": {
       "text": "opencode documents approval prompts and rules, and no OS sandbox; --auto approves every request that is not explicitly denied.",
       "source": "opencode-permissions"
+    },
+    "cursor.default_mode": {
+      "text": "Auto-review is the recommended default run mode: allowlisted calls run immediately, other shell commands run in the sandbox when possible, and a classifier reviews the rest.",
+      "source": "cursor-run-modes"
+    },
+    "cursor.read_access": {
+      "text": "Read Access defaults to System: the agent can read files outside the workspace without approval.",
+      "source": "cursor-run-modes"
+    },
+    "cursor.network": {
+      "text": "The default network allowlist holds about 100 domains, including github.com, pypi.org and npmjs.com.",
+      "source": "cursor-run-modes"
+    },
+    "cursor.platforms": {
+      "text": "The sandbox uses Seatbelt on macOS and needs Linux kernel 6.2 or later with Landlock v3; otherwise Cursor asks before running commands.",
+      "source": "cursor-run-modes"
+    },
+    "cursor.sandbox_json": {
+      "text": "sandbox.json type defaults to workspace_readwrite; insecure_none disables the sandbox; readBoundary defaults to system.",
+      "source": "cursor-sandbox"
+    },
+    "cursor.run_everything": {
+      "text": "In Run Everything mode every tool call runs automatically, without the sandbox.",
+      "source": "cursor-run-modes"
     }
   }
 }
